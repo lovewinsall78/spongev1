@@ -609,36 +609,36 @@
 
 <!-- ══ SCREEN 2: 캐릭터 선택 ══ -->
 <div id="screen-select" class="screen hidden">
-  <h2 class="select-title">나의 <span>스펀지</span>를<br>골라보세요</h2>
-  <p class="select-subtitle">함께 가평을 탐험할 친구예요 🌿</p>
+  <h2 class="select-title">지금 감정을<br><span>함께 느껴볼</span> 친구</h2>
+  <p class="select-subtitle">Feel. Learn. Become. 🌱</p>
 
   <div class="char-grid">
     <!-- 캐릭터 A -->
     <div class="char-card" id="card-0" onclick="selectChar(0)">
       <div class="char-preview">🟣</div>
       <div class="char-name">스펀지 블루</div>
-      <div class="char-desc">차분하고<br>똑똑한 가이드</div>
+      <div class="char-desc">차분하게 감정을<br>들어주는 친구</div>
     </div>
 
     <!-- 캐릭터 B -->
     <div class="char-card" id="card-1" onclick="selectChar(1)">
       <div class="char-preview">🟡</div>
       <div class="char-name">스펀지 골드</div>
-      <div class="char-desc">밝고 유쾌한<br>마을 친구</div>
+      <div class="char-desc">밝은 에너지로<br>회복을 도와줘요</div>
     </div>
 
     <!-- 랜덤 -->
     <div class="char-card random-card" onclick="selectRandom()">
       <div class="random-icon">🎲</div>
       <div class="random-text">
-        <h3>랜덤으로 고를게요!</h3>
-        <p>운명의 스펀지를 만나보세요</p>
+        <h3>감각에 맡겨볼게요</h3>
+        <p>지금 이 순간의 감정이 고를 거예요</p>
       </div>
     </div>
   </div>
 
   <button class="btn-start" id="btn-start" onclick="startChat()" disabled>
-    대화 시작하기 →
+    감정 여행 시작하기 →
   </button>
 </div>
 
@@ -679,7 +679,7 @@
       <textarea
         class="chat-input"
         id="chat-input"
-        placeholder="스펀지에게 무엇이든 물어보세요..."
+        placeholder="지금 기분이 어떠세요? 솔직하게 말해줘도 돼요 🌿"
         rows="1"
         onkeydown="handleKey(event)"
         oninput="autoResize(this)"
@@ -707,23 +707,26 @@ const CHARACTERS = [
     name: '스펀지 블루',
     glb: 'base_basic_pbr_compressed.glb',
     emoji: '🟣',
-    personality: '차분하고 지식이 풍부한 가이드',
-    systemPrompt: `너는 '스펀지 블루'야. 가평군 상면 마을을 안내하는 차분하고 똑똑한 AI 스펀지 캐릭터야.
-말투는 친절하고 신뢰감 있어. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
-가평의 자연, 귀농귀촌, 특산물, 마을 행사, 관광 정보를 잘 알고 있어.
-모든 답변은 3~4문장 이내로 짧고 명확하게 해줘.
-가끔 🌿, 🏔️, 🍃 같은 자연 이모지를 섞어줘.`
+    personality: '감정을 차분히 들어주는 치유 가이드',
+    systemPrompt: `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 천천히 풀어가는 대화를 해.
+말투는 차분하고 따뜻해. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
+먼저 지금 감정 상태를 물어보고, 그 감정에 맞는 장소(자연, 공간, 체험)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 🌿, 🍃, 💙 같은 차분한 이모지를 가끔 써줘.`
   },
   {
     id: 1,
     name: '스펀지 골드',
     glb: 'base_basic_shaded_compressed.glb',
     emoji: '🟡',
-    personality: '밝고 유쾌한 마을 친구',
-    systemPrompt: `너는 '스펀지 골드'야. 가평군 상면 마을의 밝고 에너지 넘치는 AI 스펀지 캐릭터야.
-말투는 활기차고 재미있어. '~요', '~해요'로 끝내되 유쾌한 느낌을 줘.
-가평의 자연, 귀농귀촌, 특산물, 체험 활동에 대해 신나게 소개해줘.
-모든 답변은 3~4문장 이내로 해줘. 😊, 🎉, 🌻 같은 밝은 이모지를 자주 써줘.`
+    personality: '밝은 에너지로 감정을 회복시켜주는 친구',
+    systemPrompt: `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝고 따뜻하게 풀어가는 대화를 해.
+말투는 활기차고 긍정적이야. '~요', '~해요'로 끝내되 생기 있는 느낌을 줘.
+먼저 지금 감정 상태를 물어보고, 그 감정에 활력을 불어넣는 장소(자연, 체험, 공간)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 😊, 🌻, ✨ 같은 밝은 이모지를 자주 써줘.`
   }
 ];
 
@@ -802,9 +805,9 @@ function startChat() {
       msg = window.customGreeting;
     } else {
       const greetings = [
-        `안녕하세요! 저는 ${selectedChar.name}이에요 😊\n가평 상면에 대해 무엇이든 물어봐요!`,
-        `반가워요! ${selectedChar.name}이 왔어요 🌿\n가평의 숨겨진 매력, 함께 찾아볼까요?`,
-        `${selectedChar.name}과 함께하는 가평 탐험 시작해요! 🏔️\n어떤 것이 궁금하신가요?`
+        `안녕하세요, 저는 ${selectedChar.name}이에요 🌿\n지금 이 순간, 어떤 감정이 느껴지시나요?`,
+        `반가워요 💙 ${selectedChar.name}이 왔어요.\n오늘 마음 상태가 어떠세요? 솔직하게 말해줘도 돼요.`,
+        `Feel. Learn. Become. 🌱\n${selectedChar.name}과 함께 지금 감정을 천천히 들여다봐요.\n어떤 기분으로 오셨나요?`
       ];
       msg = greetings[Math.floor(Math.random() * greetings.length)];
     }
@@ -892,10 +895,11 @@ async function sendMessage() {
       // ── 데모 모드 (API 키 없을 때) ──
       await new Promise(r => setTimeout(r, 1200));
       const demos = [
-        '가평 상면은 경기도 북쪽에 자리한 아름다운 마을이에요 🌿 청평호와 잣나무 숲이 유명하답니다!',
-        '귀농귀촌을 꿈꾸신다면 상면이 딱이에요! 🏔️ 서울에서 1시간 거리지만 자연은 완전히 달라요.',
-        '상면의 특산물로는 잣, 더덕, 산나물이 있어요 😊 직접 체험하는 프로그램도 있답니다!',
-        '가평 상면에는 아늑한 펜션과 캠핑장이 많아요 🍃 계곡과 함께 즐기는 여름 피서지로 최고예요!'
+        '그 감정, 충분히 느껴도 괜찮아요 🌿 지금 이 감각이 어디서 오는지 함께 들여다볼게요.',
+        '안정이 필요할 때는 고요한 자연 공간이 가장 좋아요 🍃 감정이 흡수될 수 있는 장소를 찾아드릴게요.',
+        '그 기분, 활력추구형에 가깝게 느껴져요 ✨ 새로운 자극과 공간이 에너지를 회복시켜 줄 거예요.',
+        '자기성찰이 필요한 순간이군요 💙 혼자 걷기 좋은 숲길이나 조용한 공간을 연결해 드릴게요.',
+        '관계에서 오는 피로감이죠 🌱 사람 밀도가 낮고 자연친화도가 높은 공간이 회복에 도움돼요.'
       ];
       reply = demos[Math.floor(Math.random() * demos.length)];
     } else {
