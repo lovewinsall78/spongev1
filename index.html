@@ -71,6 +71,48 @@
     }
 
     /* 터치 힌트 링 */
+    /* 인트로 말풍선 */
+    .intro-bubble {
+      position: absolute;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #1a1a2e;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 12px 22px;
+      border-radius: 24px;
+      white-space: nowrap;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+      z-index: 10;
+      animation: bubble-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both,
+                 bubble-float 3s ease-in-out 0.5s infinite;
+      letter-spacing: -0.3px;
+    }
+
+    /* 말풍선 꼬리 (아래) */
+    .intro-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(255,255,255,0.95);
+      border-bottom: none;
+    }
+
+    @keyframes bubble-pop {
+      from { opacity: 0; transform: translateX(-50%) scale(0.7); }
+      to   { opacity: 1; transform: translateX(-50%) scale(1); }
+    }
+
+    @keyframes bubble-float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50%       { transform: translateX(-50%) translateY(-5px); }
+    }
+
     .pulse-ring {
       position: absolute;
       bottom: 48px;
@@ -556,6 +598,9 @@
     touch-action="none"
   ></model-viewer>
 
+  <!-- 인트로 말풍선 (관리자에서 수정 가능) -->
+  <div class="intro-bubble" id="intro-bubble">준비되셨나요, 터치해 주세요</div>
+
   <!-- 터치 힌트 -->
   <div class="pulse-ring">
     <div class="pulse-ring-dot"></div>
@@ -750,14 +795,19 @@ function startChat() {
 
   showScreen('screen-chat');
 
-  // 첫 인사 메시지
+  // 첫 인사 메시지 (관리자 설정 우선)
   setTimeout(() => {
-    const greetings = [
-      `안녕하세요! 저는 ${selectedChar.name}이에요 😊\n가평 상면에 대해 무엇이든 물어봐요!`,
-      `반가워요! ${selectedChar.name}이 왔어요 🌿\n가평의 숨겨진 매력, 함께 찾아볼까요?`,
-      `${selectedChar.name}과 함께하는 가평 탐험 시작해요! 🏔️\n어떤 것이 궁금하신가요?`
-    ];
-    const msg = greetings[Math.floor(Math.random() * greetings.length)];
+    let msg;
+    if (window.customGreeting) {
+      msg = window.customGreeting;
+    } else {
+      const greetings = [
+        `안녕하세요! 저는 ${selectedChar.name}이에요 😊\n가평 상면에 대해 무엇이든 물어봐요!`,
+        `반가워요! ${selectedChar.name}이 왔어요 🌿\n가평의 숨겨진 매력, 함께 찾아볼까요?`,
+        `${selectedChar.name}과 함께하는 가평 탐험 시작해요! 🏔️\n어떤 것이 궁금하신가요?`
+      ];
+      msg = greetings[Math.floor(Math.random() * greetings.length)];
+    }
     addBotMessage(msg);
     showBubble(msg.split('\n')[0]);
   }, 600);
@@ -914,6 +964,18 @@ window.visualViewport?.addEventListener('resize', () => {
 // 초기 로딩
 // ══════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  // 관리자 설정값 반영
+  const savedIntro = localStorage.getItem('sponge_intro_text');
+  if (savedIntro) {
+    document.getElementById('intro-bubble').textContent = savedIntro;
+  }
+
+  const savedGreeting = localStorage.getItem('sponge_greeting_text');
+  if (savedGreeting) {
+    // startChat()에서 사용할 수 있도록 전역 저장
+    window.customGreeting = savedGreeting;
+  }
+
   const introViewer = document.getElementById('intro-viewer');
 
   introViewer.addEventListener('load', () => {

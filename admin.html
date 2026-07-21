@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스펀지맵 관리자</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --primary: #6C63FF;
+      --primary-light: #a78bfa;
+      --bg: #0b0b1e;
+      --bg2: #13132b;
+      --surface: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.10);
+      --text: #ffffff;
+      --text2: rgba(255,255,255,0.5);
+      --success: #34d399;
+      --danger: #f87171;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo .logo-text {
+      font-size: 18px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-logo .admin-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+
+    .preview-btn {
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .preview-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ── 레이아웃 ── */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── 섹션 카드 ── */
+    .section-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(108,99,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .section-desc {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .section-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── 폼 요소 ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 15px;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field-input:focus { border-color: var(--primary); }
+    .field-input::placeholder { color: var(--text2); }
+
+    textarea.field-input {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.6;
+    }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--text2);
+      text-align: right;
+      margin-top: -8px;
+    }
+
+    .char-count.warn { color: var(--danger); }
+
+    /* ── 미리보기 ── */
+    .preview-box {
+      background: #1a1a35;
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .bubble-preview {
+      background: rgba(255,255,255,0.95);
+      color: #1a1a2e;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 12px 22px;
+      border-radius: 24px;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      word-break: keep-all;
+      text-align: center;
+      max-width: 280px;
+    }
+
+    .bubble-preview::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(255,255,255,0.95);
+      border-bottom: none;
+    }
+
+    .bubble-char-hint {
+      font-size: 32px;
+      margin-top: 8px;
+    }
+
+    /* ── 버튼 ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-save {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 20px rgba(108,99,255,0.35);
+    }
+
+    .btn-save:active { transform: scale(0.97); }
+
+    .btn-reset {
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── 토스트 ── */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--success);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 50px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── 정보 박스 ── */
+    .info-box {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      background: rgba(108,99,255,0.08);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .info-box .info-icon { font-size: 16px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+  <div class="header-logo">
+    <div class="logo-text">스펀지맵</div>
+    <div class="admin-badge">ADMIN</div>
+  </div>
+  <a href="index.html" class="preview-btn" target="_blank">← 랜딩 보기</a>
+</header>
+
+<main>
+
+  <!-- ── 섹션: 도입 문구 ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-icon">💬</div>
+      <div>
+        <div class="section-title">도입 문구 설정</div>
+        <div class="section-desc">첫 화면 캐릭터 위 말풍선에 표시되는 문구예요</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <!-- 미리보기 -->
+      <div class="preview-box">
+        <div class="preview-label">미리보기</div>
+        <div class="bubble-preview" id="bubble-preview">준비되셨나요, 터치해 주세요</div>
+        <div class="bubble-char-hint">🟣</div>
+      </div>
+
+      <!-- 입력 -->
+      <div>
+        <div class="field-label">말풍선 문구</div>
+        <input
+          type="text"
+          class="field-input"
+          id="intro-text"
+          placeholder="예: 준비되셨나요, 터치해 주세요"
+          maxlength="30"
+          oninput="onIntroInput(this)"
+        />
+        <div class="char-count" id="intro-count">0 / 30</div>
+      </div>
+
+      <div class="info-box">
+        <span class="info-icon">💡</span>
+        <span>20자 이내로 짧고 임팩트 있게 써야 말풍선이 예쁘게 보여요!</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveIntro()">저장하기</button>
+        <button class="btn-reset" onclick="resetIntro()">기본값으로</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 섹션: 캐릭터 인사말 ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-icon">🗣️</div>
+      <div>
+        <div class="section-title">첫 인사말 설정</div>
+        <div class="section-desc">채팅 시작 시 캐릭터가 처음 건네는 말이에요</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div>
+        <div class="field-label">인사말 (줄바꿈 가능)</div>
+        <textarea
+          class="field-input"
+          id="greeting-text"
+          placeholder="예: 안녕하세요! 가평 상면을 함께 탐험해요 🌿"
+          maxlength="80"
+          oninput="onGreetingInput(this)"
+        ></textarea>
+        <div class="char-count" id="greeting-count">0 / 80</div>
+      </div>
+
+      <div class="info-box">
+        <span class="info-icon">💡</span>
+        <span>캐릭터 선택 후 채팅창 첫 메시지로 표시돼요. 비워두면 기본 인사말이 나와요.</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveGreeting()">저장하기</button>
+        <button class="btn-reset" onclick="resetGreeting()">기본값으로</button>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- 토스트 -->
+<div id="toast">✅ 저장됐어요!</div>
+
+<script>
+  const DEFAULT_INTRO    = '준비되셨나요, 터치해 주세요';
+  const DEFAULT_GREETING = '';
+
+  // ── 초기 로드 ──
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedIntro    = localStorage.getItem('sponge_intro_text')    || DEFAULT_INTRO;
+    const savedGreeting = localStorage.getItem('sponge_greeting_text') || DEFAULT_GREETING;
+
+    const introEl    = document.getElementById('intro-text');
+    const greetingEl = document.getElementById('greeting-text');
+
+    introEl.value    = savedIntro;
+    greetingEl.value = savedGreeting;
+
+    updateBubblePreview(savedIntro);
+    updateCount('intro-count',    savedIntro.length,    30);
+    updateCount('greeting-count', savedGreeting.length, 80);
+  });
+
+  // ── 입력 핸들러 ──
+  function onIntroInput(el) {
+    updateBubblePreview(el.value);
+    updateCount('intro-count', el.value.length, 30);
+  }
+
+  function onGreetingInput(el) {
+    updateCount('greeting-count', el.value.length, 80);
+  }
+
+  function updateBubblePreview(text) {
+    document.getElementById('bubble-preview').textContent = text || '(비어 있음)';
+  }
+
+  function updateCount(id, len, max) {
+    const el = document.getElementById(id);
+    el.textContent = `${len} / ${max}`;
+    el.classList.toggle('warn', len > max * 0.85);
+  }
+
+  // ── 저장 ──
+  function saveIntro() {
+    const val = document.getElementById('intro-text').value.trim();
+    if (!val) return alert('문구를 입력해 주세요!');
+    localStorage.setItem('sponge_intro_text', val);
+    showToast('도입 문구가 저장됐어요! ✅');
+  }
+
+  function saveGreeting() {
+    const val = document.getElementById('greeting-text').value.trim();
+    localStorage.setItem('sponge_greeting_text', val);
+    showToast('인사말이 저장됐어요! ✅');
+  }
+
+  // ── 초기화 ──
+  function resetIntro() {
+    if (!confirm('기본값으로 되돌릴까요?')) return;
+    localStorage.removeItem('sponge_intro_text');
+    document.getElementById('intro-text').value = DEFAULT_INTRO;
+    updateBubblePreview(DEFAULT_INTRO);
+    updateCount('intro-count', DEFAULT_INTRO.length, 30);
+    showToast('기본값으로 되돌렸어요');
+  }
+
+  function resetGreeting() {
+    if (!confirm('기본값으로 되돌릴까요?')) return;
+    localStorage.removeItem('sponge_greeting_text');
+    document.getElementById('greeting-text').value = '';
+    updateCount('greeting-count', 0, 80);
+    showToast('기본값으로 되돌렸어요');
+  }
+
+  // ── 토스트 ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+</script>
+
+</body>
+</html>
