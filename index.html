@@ -628,9 +628,6 @@
     id="intro-viewer"
     src="base_basic_pbr_compressed.glb"
     alt="스펀지 캐릭터"
-    auto-rotate
-    auto-rotate-delay="0"
-    rotation-per-second="18deg"
     autoplay
     shadow-intensity="1.5"
     shadow-softness="0.6"
@@ -694,9 +691,6 @@
       id="chat-viewer"
       src="base_basic_pbr_compressed.glb"
       alt="스펀지 캐릭터"
-      auto-rotate
-      auto-rotate-delay="3000"
-      rotation-per-second="12deg"
       autoplay
       shadow-intensity="1.2"
       shadow-softness="0.7"
@@ -739,6 +733,69 @@
 </div>
 
 <script>
+// ══════════════════════════════
+// 🔄 앞모습 위주 자동 회전 (시계방향 진동)
+// ══════════════════════════════
+function startFrontFocusedRotation(viewer, phiDeg, radiusM, amplitudeDeg, speedRad) {
+  // amplitudeDeg: 앞에서 좌우로 흔들리는 각도 범위 (예: 65 → 앞±65°)
+  // speedRad: 진동 속도 (라디안/초, 예: 0.45 → 약 14초 주기)
+  const controller = new AbortController();
+  const { signal } = controller;
+
+  // 시계방향: phase = π 에서 시작 → sin(π)=0, 이후 감소 → 음수 theta = 왼쪽으로 → 캐릭터 오른쪽 먼저 노출 = 시계방향
+  let phase = Math.PI;
+  let lastTs = null;
+  let paused = false;
+  let resumeTimer = null;
+
+  function loop(ts) {
+    if (signal.aborted) return;
+    requestAnimationFrame(loop);
+    if (paused) { lastTs = null; return; }
+    if (lastTs !== null) {
+      const dt = Math.min((ts - lastTs) / 1000, 0.05);
+      phase -= speedRad * dt; // phase 감소 → 시계방향
+    }
+    lastTs = ts;
+    const theta = amplitudeDeg * Math.sin(phase);
+    viewer.setAttribute('camera-orbit', `${theta.toFixed(2)}deg ${phiDeg}deg ${radiusM}m`);
+  }
+
+  // 유저가 터치/드래그 시작 → 자동 회전 일시정지
+  viewer.addEventListener('camera-change', e => {
+    if (e.detail?.source === 'user-interaction') {
+      paused = true;
+      clearTimeout(resumeTimer);
+    }
+  }, { signal });
+
+  // 터치/포인터 끝나면 2초 후 재개 (현재 각도 기준으로 부드럽게 이어서)
+  ['pointerup', 'touchend'].forEach(evt => {
+    viewer.addEventListener(evt, () => {
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => {
+        try {
+          const orb = viewer.getCameraOrbit();
+          if (orb) {
+            // 현재 theta에 맞춰 phase 동기화 → 튀는 현상 방지
+            const curTheta = orb.theta * (180 / Math.PI);
+            const ratio = Math.max(-1, Math.min(1, curTheta / amplitudeDeg));
+            // sin(phase) = ratio → phase = asin(ratio)
+            // 현재 방향(감소 중)을 유지하기 위해 π - asin(ratio) 사용
+            phase = Math.PI - Math.asin(ratio);
+          }
+        } catch (_) {}
+        paused = false;
+      }, 2000);
+    }, { signal });
+  });
+
+  requestAnimationFrame(loop);
+  return () => { controller.abort(); clearTimeout(resumeTimer); };
+}
+
+let _chatRotationStop = null;
+
 // ══════════════════════════════
 // ⚙️ 설정 — API 키를 여기에 입력하세요
 // ══════════════════════════════
@@ -873,7 +930,17 @@ function startChat() {
 
   // 채팅 뷰어 캐릭터 교체
   const chatViewer = document.getElementById('chat-viewer');
+  if (_chatRotationStop) { _chatRotationStop(); _chatRotationStop = null; }
   chatViewer.setAttribute('src', selectedChar.glb);
+
+  // 모델 로드 후 앞모습 위주 시계방향 자동 회전 시작 (amplitude 65°, auto-rotate-delay 3초)
+  const _onChatLoad = () => {
+    chatViewer.removeEventListener('load', _onChatLoad);
+    setTimeout(() => {
+      _chatRotationStop = startFrontFocusedRotation(chatViewer, 75, 4, 65, 0.35);
+    }, 3000);
+  };
+  chatViewer.addEventListener('load', _onChatLoad);
 
   // 이름 배지
   document.getElementById('char-name-badge').textContent = selectedChar.name;
@@ -1080,6 +1147,8 @@ window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loading-screen').classList.add('hide');
       showScreen('screen-intro');
     }, 500);
+    // 인트로: 앞모습 위주 시계방향 자동 회전 (amplitude 65°, 약 14초 주기)
+    startFrontFocusedRotation(introViewer, 80, 4.5, 65, 0.45);
   });
 
   // 폴백: 4초 후 강제 진입
