@@ -460,6 +460,49 @@
     }
 
     /* 입력창 */
+    /* ── 예시 문구 칩 ── */
+    .suggestion-chips {
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: var(--bg2);
+      transition: opacity 0.3s ease, max-height 0.3s ease;
+      max-height: 60px;
+    }
+
+    .suggestion-chips::-webkit-scrollbar { display: none; }
+
+    .suggestion-chips.hidden {
+      opacity: 0;
+      max-height: 0;
+      padding: 0 16px;
+      pointer-events: none;
+    }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(108,99,255,0.4);
+      background: rgba(108,99,255,0.08);
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+
+    .chip:active {
+      background: rgba(108,99,255,0.25);
+      border-color: var(--primary);
+      transform: scale(0.96);
+    }
+
     .chat-input-bar {
       flex-shrink: 0;
       display: flex;
@@ -675,6 +718,7 @@
   <!-- 채팅 영역 -->
   <div class="chat-area">
     <div class="chat-messages" id="chat-messages"></div>
+    <div class="suggestion-chips hidden" id="suggestion-chips"></div>
     <div class="chat-input-bar">
       <textarea
         class="chat-input"
@@ -682,7 +726,7 @@
         placeholder="지금 기분이 어떠세요? 솔직하게 말해줘도 돼요 🌿"
         rows="1"
         onkeydown="handleKey(event)"
-        oninput="autoResize(this)"
+        oninput="autoResize(this); if(this.value) hideSuggestions();"
       ></textarea>
       <button class="chat-send-btn" id="send-btn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24">
@@ -736,6 +780,53 @@ const CHARACTERS = [
 let selectedChar = null;
 let chatHistory = [];
 let isTyping = false;
+
+// ══════════════════════════════
+// 예시 문구 풀
+// ══════════════════════════════
+const SUGGESTION_POOL = [
+  '요즘 자꾸 지쳐요',
+  '아무것도 하기 싫어요',
+  '혼자 있고 싶어요',
+  '기분 전환이 필요해요',
+  '스트레스가 너무 많아요',
+  '누군가가 그리워요',
+  '새로운 자극이 필요해요',
+  '무기력한 기분이에요',
+  '불안한 마음이 있어요',
+  '복잡한 생각이 많아요',
+  '쉬고 싶은데 쉬어지지 않아요',
+  '외로운 것 같아요',
+  '설레는 기분이에요',
+  '화가 나 있어요',
+  '자연 속에 있고 싶어요',
+  '뭔가 변화가 필요해요',
+  '활력이 떨어졌어요',
+  '나를 돌보고 싶어요',
+];
+
+function showSuggestions() {
+  const chips = document.getElementById('suggestion-chips');
+  const shuffled = [...SUGGESTION_POOL].sort(() => Math.random() - 0.5);
+  const picked = shuffled.slice(0, 3);
+
+  chips.innerHTML = picked.map(text =>
+    `<button class="chip" onclick="useChip('${text}')">${text}</button>`
+  ).join('');
+  chips.classList.remove('hidden');
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestion-chips').classList.add('hidden');
+}
+
+function useChip(text) {
+  const input = document.getElementById('chat-input');
+  input.value = text;
+  autoResize(input);
+  hideSuggestions();
+  sendMessage();
+}
 
 // ══════════════════════════════
 // 화면 전환
@@ -829,6 +920,8 @@ function addBotMessage(text) {
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
+  // 봇 메시지 후 예시 문구 표시
+  setTimeout(showSuggestions, 300);
 }
 
 function addUserMessage(text) {
