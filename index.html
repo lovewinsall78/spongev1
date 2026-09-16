@@ -797,11 +797,27 @@ function startFrontFocusedRotation(viewer, phiDeg, radiusM, amplitudeDeg, speedR
 let _chatRotationStop = null;
 
 // ══════════════════════════════
-// ⚙️ 설정 — API 키를 여기에 입력하세요
+// ⚙️ 설정 — 슈퍼 관리자(admin.html)에서 관리
 // ══════════════════════════════
-const API_KEY = 'YOUR_OPENAI_API_KEY';  // ← OpenAI API 키
+// API 키: localStorage 'sponge_api_key' 에서 읽기
+const API_KEY = localStorage.getItem('sponge_api_key') || 'YOUR_OPENAI_API_KEY';
 
-// 캐릭터 정의
+// 기본 프롬프트 (슈퍼 관리자가 덮어쓸 수 있음)
+const DEFAULT_PROMPT_BLUE = `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 천천히 풀어가는 대화를 해.
+말투는 차분하고 따뜻해. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
+먼저 지금 감정 상태를 물어보고, 그 감정에 맞는 장소(자연, 공간, 체험)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 🌿, 🍃, 💙 같은 차분한 이모지를 가끔 써줘.`;
+
+const DEFAULT_PROMPT_GOLD = `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝고 따뜻하게 풀어가는 대화를 해.
+말투는 활기차고 긍정적이야. '~요', '~해요'로 끝내되 생기 있는 느낌을 줘.
+먼저 지금 감정 상태를 물어보고, 그 감정에 활력을 불어넣는 장소(자연, 체험, 공간)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 😊, 🌻, ✨ 같은 밝은 이모지를 자주 써줘.`;
+
+// 캐릭터 정의 (프롬프트를 localStorage에서 읽어 적용)
 const CHARACTERS = [
   {
     id: 0,
@@ -809,12 +825,9 @@ const CHARACTERS = [
     glb: 'base_basic_pbr_compressed.glb',
     emoji: '🟣',
     personality: '감정을 차분히 들어주는 치유 가이드',
-    systemPrompt: `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
-사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 천천히 풀어가는 대화를 해.
-말투는 차분하고 따뜻해. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
-먼저 지금 감정 상태를 물어보고, 그 감정에 맞는 장소(자연, 공간, 체험)를 연결해줘.
-성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
-모든 답변은 3~4문장 이내로 짧게. 🌿, 🍃, 💙 같은 차분한 이모지를 가끔 써줘.`
+    get systemPrompt() {
+      return localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE;
+    }
   },
   {
     id: 1,
@@ -822,14 +835,30 @@ const CHARACTERS = [
     glb: 'base_basic_shaded_compressed.glb',
     emoji: '🟡',
     personality: '밝은 에너지로 감정을 회복시켜주는 친구',
-    systemPrompt: `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
-사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝고 따뜻하게 풀어가는 대화를 해.
-말투는 활기차고 긍정적이야. '~요', '~해요'로 끝내되 생기 있는 느낌을 줘.
-먼저 지금 감정 상태를 물어보고, 그 감정에 활력을 불어넣는 장소(자연, 체험, 공간)를 연결해줘.
-성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
-모든 답변은 3~4문장 이내로 짧게. 😊, 🌻, ✨ 같은 밝은 이모지를 자주 써줘.`
+    get systemPrompt() {
+      return localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD;
+    }
   }
 ];
+
+// ── 일일 사용량 체크 ──
+function getTodayKey() {
+  return 'sponge_count_' + new Date().toISOString().slice(0,10);
+}
+function getDailyCount() {
+  return parseInt(localStorage.getItem(getTodayKey()) || '0');
+}
+function getDailyLimit() {
+  return parseInt(localStorage.getItem('sponge_daily_limit') || '0'); // 0=무제한
+}
+function incrementDailyCount() {
+  const key = getTodayKey();
+  localStorage.setItem(key, getDailyCount() + 1);
+}
+function isLimitReached() {
+  const limit = getDailyLimit();
+  return limit > 0 && getDailyCount() >= limit;
+}
 
 // ══════════════════════════════
 // 상태 관리
@@ -1048,10 +1077,22 @@ async function sendMessage() {
 
   showTyping();
 
+  // ── 일일 사용량 제한 체크 ──
+  if (isLimitReached()) {
+    removeTyping();
+    const limitMsg = `오늘은 대화를 많이 나눴어요 🌿\n내일 또 함께 이야기해요! (일일 한도 도달)`;
+    addBotMessage(limitMsg);
+    isTyping = false;
+    document.getElementById('send-btn').disabled = false;
+    return;
+  }
+
   try {
     let reply;
+    // API 키 최신값 읽기
+    const currentApiKey = localStorage.getItem('sponge_api_key') || 'YOUR_OPENAI_API_KEY';
 
-    if (API_KEY === 'YOUR_OPENAI_API_KEY') {
+    if (currentApiKey === 'YOUR_OPENAI_API_KEY') {
       // ── 데모 모드 (API 키 없을 때) ──
       await new Promise(r => setTimeout(r, 1200));
       const demos = [
@@ -1068,7 +1109,7 @@ async function sendMessage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
+          'Authorization': `Bearer ${currentApiKey}`
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
@@ -1090,6 +1131,7 @@ async function sendMessage() {
     removeTyping();
     addBotMessage(reply);
     showBubble(reply.length > 40 ? reply.slice(0, 38) + '…' : reply);
+    incrementDailyCount(); // 사용량 카운트 증가
 
   } catch (err) {
     removeTyping();

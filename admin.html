@@ -296,6 +296,74 @@
     }
 
     .info-box .info-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* ── 슈퍼 관리자 ── */
+    .super-lock {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 16px; padding: 32px 24px; text-align: center;
+    }
+    .lock-icon { font-size: 40px; }
+    .lock-title { font-size: 16px; font-weight: 800; }
+    .lock-desc { font-size: 13px; color: var(--text2); }
+    .lock-row { display: flex; gap: 10px; width: 100%; max-width: 320px; }
+    .lock-input {
+      flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 12px 16px; font-size: 15px;
+      color: var(--text); font-family: inherit; outline: none;
+      transition: border-color 0.2s;
+    }
+    .lock-input:focus { border-color: var(--primary); }
+    .lock-btn {
+      padding: 12px 20px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    #super-content { display: none; }
+    #super-content.unlocked { display: block; }
+
+    .section-card.super-card {
+      border-color: rgba(255,209,102,0.25);
+    }
+    .section-card.super-card .section-icon {
+      background: rgba(255,209,102,0.12);
+    }
+    .admin-badge.super {
+      border-color: #FFD166; color: #FFD166;
+    }
+
+    .prompt-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .prompt-tab {
+      padding: 8px 18px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: transparent; color: var(--text2); font-size: 13px;
+      font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .prompt-tab.active {
+      background: rgba(108,99,255,0.18); border-color: var(--primary);
+      color: var(--text);
+    }
+
+    .limit-row { display: flex; align-items: center; gap: 12px; }
+    .limit-row input[type=number] {
+      width: 100px; background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; font-size: 15px;
+      color: var(--text); font-family: inherit; outline: none;
+    }
+    .limit-row input[type=number]:focus { border-color: var(--primary); }
+    .limit-row span { font-size: 14px; color: var(--text2); }
+
+    .usage-stat {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; background: rgba(108,99,255,0.07);
+      border-radius: 12px; border: 1px solid rgba(108,99,255,0.15);
+    }
+    .usage-stat .stat-label { font-size: 13px; color: var(--text2); }
+    .usage-stat .stat-val { font-size: 18px; font-weight: 900; color: var(--primary-light); }
+
+    .warn-box {
+      display: flex; gap: 10px; padding: 14px 16px;
+      background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
+      border-radius: 12px; font-size: 13px; color: #f87171; line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -392,6 +460,108 @@
     </div>
   </div>
 
+  <!-- ── 슈퍼 관리자 섹션 ── -->
+  <div class="section-card super-card">
+    <div class="section-header">
+      <div class="section-icon">🔐</div>
+      <div>
+        <div class="section-title">슈퍼 관리자</div>
+        <div class="section-desc">API 키 · AI 프롬프트 · 사용량 제한 설정</div>
+      </div>
+      <div class="admin-badge super" style="margin-left:auto">SUPER</div>
+    </div>
+
+    <!-- 잠금 해제 UI -->
+    <div class="super-lock" id="super-lock">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-title">슈퍼 관리자 전용 구역</div>
+      <div class="lock-desc">접근 비밀번호를 입력해 주세요</div>
+      <div class="lock-row">
+        <input type="password" class="lock-input" id="super-pw-input"
+          placeholder="비밀번호" onkeydown="if(event.key==='Enter') superUnlock()"/>
+        <button class="lock-btn" onclick="superUnlock()">확인</button>
+      </div>
+      <div id="super-pw-err" style="font-size:12px;color:var(--danger);display:none">
+        비밀번호가 틀렸어요
+      </div>
+    </div>
+
+    <!-- 잠금 해제 후 콘텐츠 -->
+    <div id="super-content">
+      <div class="section-body" style="border-top:1px solid var(--border)">
+
+        <!-- 오늘 사용량 현황 -->
+        <div class="field-label">📊 오늘 API 사용 현황</div>
+        <div class="usage-stat">
+          <span class="stat-label">오늘 대화 횟수</span>
+          <span class="stat-val" id="stat-today">0 회</span>
+        </div>
+        <div class="usage-stat">
+          <span class="stat-label">일일 제한</span>
+          <span class="stat-val" id="stat-limit">무제한</span>
+        </div>
+
+        <!-- 일일 사용량 제한 -->
+        <div>
+          <div class="field-label">⚡ 일일 대화 횟수 제한</div>
+          <div class="limit-row">
+            <input type="number" id="daily-limit" min="0" max="9999" placeholder="0=무제한"/>
+            <span>회 / 일 &nbsp;(0 = 무제한)</span>
+          </div>
+          <div style="margin-top:8px">
+            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="saveLimit()">저장</button>
+            <button class="btn-reset" style="padding:10px 16px;font-size:13px;margin-left:8px" onclick="resetDailyCount()">오늘 카운트 초기화</button>
+          </div>
+        </div>
+
+        <!-- API 키 -->
+        <div>
+          <div class="field-label">🔑 OpenAI API 키</div>
+          <div class="warn-box" style="margin-bottom:10px">
+            <span>⚠️</span>
+            <span>API 키는 이 기기의 브라우저에만 저장돼요. 공용 PC에서는 사용 후 반드시 삭제하세요.</span>
+          </div>
+          <input type="password" class="field-input" id="api-key-input"
+            placeholder="sk-..."/>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="saveApiKey()">저장</button>
+            <button class="btn-reset" style="padding:10px 16px;font-size:13px" onclick="clearApiKey()">삭제</button>
+          </div>
+        </div>
+
+        <!-- AI 시스템 프롬프트 -->
+        <div>
+          <div class="field-label">🤖 AI 캐릭터 시스템 프롬프트</div>
+          <div class="prompt-tabs">
+            <button class="prompt-tab active" onclick="switchPromptTab('blue',this)">💜 스펀지 블루</button>
+            <button class="prompt-tab" onclick="switchPromptTab('gold',this)">✨ 스펀지 골드</button>
+          </div>
+          <textarea class="field-input" id="prompt-blue" rows="10"
+            style="font-size:13px;line-height:1.6;font-family:monospace"
+            placeholder="스펀지 블루의 역할·말투·행동지침을 입력하세요..."></textarea>
+          <textarea class="field-input" id="prompt-gold" rows="10"
+            style="font-size:13px;line-height:1.6;font-family:monospace;display:none"
+            placeholder="스펀지 골드의 역할·말투·행동지침을 입력하세요..."></textarea>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="savePrompts()">프롬프트 저장</button>
+            <button class="btn-reset" style="padding:10px 16px;font-size:13px" onclick="resetPrompts()">기본값으로</button>
+          </div>
+        </div>
+
+        <!-- 비밀번호 변경 -->
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div class="field-label">🔒 슈퍼 관리자 비밀번호 변경</div>
+          <div style="display:flex;gap:8px">
+            <input type="password" class="field-input" id="new-pw" placeholder="새 비밀번호 (최소 4자)"/>
+            <button class="btn-save" style="padding:0 20px;font-size:13px;white-space:nowrap" onclick="changePassword()">변경</button>
+          </div>
+        </div>
+
+        <button class="btn-reset" style="width:100%;padding:12px" onclick="superLock()">🔒 잠금</button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- 토스트 -->
@@ -475,6 +645,131 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ══════════════════════════════
+  // 슈퍼 관리자
+  // ══════════════════════════════
+  const SUPER_PW_KEY   = 'sponge_super_pw';
+  const DEFAULT_SUPER_PW = 'sponge2025'; // 초기 비밀번호
+
+  const DEFAULT_PROMPT_BLUE = `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 천천히 풀어가는 대화를 해.
+말투는 차분하고 따뜻해. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
+먼저 지금 감정 상태를 물어보고, 그 감정에 맞는 장소(자연, 공간, 체험)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 🌿, 🍃, 💙 같은 차분한 이모지를 가끔 써줘.`;
+
+  const DEFAULT_PROMPT_GOLD = `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝고 따뜻하게 풀어가는 대화를 해.
+말투는 활기차고 긍정적이야. '~요', '~해요'로 끝내되 생기 있는 느낌을 줘.
+먼저 지금 감정 상태를 물어보고, 그 감정에 활력을 불어넣는 장소(자연, 체험, 공간)를 연결해줘.
+성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+모든 답변은 3~4문장 이내로 짧게. 😊, 🌻, ✨ 같은 밝은 이모지를 자주 써줘.`;
+
+  function getSuperPw() {
+    return localStorage.getItem(SUPER_PW_KEY) || DEFAULT_SUPER_PW;
+  }
+
+  function superUnlock() {
+    const input = document.getElementById('super-pw-input').value;
+    const err   = document.getElementById('super-pw-err');
+    if (input === getSuperPw()) {
+      document.getElementById('super-lock').style.display = 'none';
+      document.getElementById('super-content').classList.add('unlocked');
+      err.style.display = 'none';
+      loadSuperContent();
+    } else {
+      err.style.display = 'block';
+      document.getElementById('super-pw-input').value = '';
+    }
+  }
+
+  function superLock() {
+    document.getElementById('super-lock').style.display = 'flex';
+    document.getElementById('super-content').classList.remove('unlocked');
+    document.getElementById('super-pw-input').value = '';
+  }
+
+  function loadSuperContent() {
+    // API 키 (마스킹 표시)
+    const savedKey = localStorage.getItem('sponge_api_key') || '';
+    document.getElementById('api-key-input').value = savedKey;
+
+    // 일일 제한
+    const limit = localStorage.getItem('sponge_daily_limit') || '0';
+    document.getElementById('daily-limit').value = limit;
+    document.getElementById('stat-limit').textContent = limit === '0' ? '무제한' : limit + ' 회';
+
+    // 오늘 사용량
+    const today = new Date().toISOString().slice(0,10);
+    const count = parseInt(localStorage.getItem('sponge_count_' + today) || '0');
+    document.getElementById('stat-today').textContent = count + ' 회';
+
+    // 프롬프트
+    document.getElementById('prompt-blue').value =
+      localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE;
+    document.getElementById('prompt-gold').value =
+      localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD;
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-')) { alert('올바른 OpenAI API 키를 입력해 주세요 (sk- 로 시작)'); return; }
+    localStorage.setItem('sponge_api_key', val);
+    showToast('API 키가 저장됐어요 🔑');
+  }
+
+  function clearApiKey() {
+    if (!confirm('API 키를 삭제할까요?')) return;
+    localStorage.removeItem('sponge_api_key');
+    document.getElementById('api-key-input').value = '';
+    showToast('API 키가 삭제됐어요');
+  }
+
+  function saveLimit() {
+    const val = document.getElementById('daily-limit').value || '0';
+    localStorage.setItem('sponge_daily_limit', val);
+    document.getElementById('stat-limit').textContent = val === '0' ? '무제한' : val + ' 회';
+    showToast('사용량 제한이 저장됐어요 ⚡');
+  }
+
+  function resetDailyCount() {
+    if (!confirm('오늘의 사용 카운트를 0으로 초기화할까요?')) return;
+    const today = new Date().toISOString().slice(0,10);
+    localStorage.removeItem('sponge_count_' + today);
+    document.getElementById('stat-today').textContent = '0 회';
+    showToast('카운트를 초기화했어요');
+  }
+
+  function switchPromptTab(tab, el) {
+    document.querySelectorAll('.prompt-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('prompt-blue').style.display = tab === 'blue' ? 'block' : 'none';
+    document.getElementById('prompt-gold').style.display = tab === 'gold' ? 'block' : 'none';
+  }
+
+  function savePrompts() {
+    localStorage.setItem('sponge_prompt_blue', document.getElementById('prompt-blue').value.trim());
+    localStorage.setItem('sponge_prompt_gold', document.getElementById('prompt-gold').value.trim());
+    showToast('프롬프트가 저장됐어요 🤖');
+  }
+
+  function resetPrompts() {
+    if (!confirm('기본 프롬프트로 되돌릴까요?')) return;
+    localStorage.removeItem('sponge_prompt_blue');
+    localStorage.removeItem('sponge_prompt_gold');
+    document.getElementById('prompt-blue').value = DEFAULT_PROMPT_BLUE;
+    document.getElementById('prompt-gold').value = DEFAULT_PROMPT_GOLD;
+    showToast('기본 프롬프트로 되돌렸어요');
+  }
+
+  function changePassword() {
+    const newPw = document.getElementById('new-pw').value.trim();
+    if (newPw.length < 4) { alert('비밀번호는 4자 이상이어야 해요'); return; }
+    localStorage.setItem(SUPER_PW_KEY, newPw);
+    document.getElementById('new-pw').value = '';
+    showToast('비밀번호가 변경됐어요 🔒');
   }
 </script>
 
