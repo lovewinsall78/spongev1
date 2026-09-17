@@ -1202,7 +1202,7 @@ function showStarterCards() {
   const chips = document.getElementById('suggestion-chips');
   if (!wrap) return;
   wrap.innerHTML = STARTER_CARDS.map(c =>
-    `<button class="starter-card" onclick="useStarterCard(${JSON.stringify(c.text)}, '${c.type}')">
+    `<button class="starter-card" data-text="${c.text}" data-type="${c.type}" onclick="useStarterCard(this.dataset.text, this.dataset.type)">
        <span class="sc-emoji">${c.emoji}</span>
        <span class="sc-text">${c.text}</span>
      </button>`
@@ -1356,7 +1356,7 @@ function showSuggestions() {
   const picked = shuffled.slice(0, 4);
 
   chips.innerHTML = picked.map(text =>
-    `<button class="chip" onclick="useChip(${JSON.stringify(text)})">${text}</button>`
+    `<button class="chip" data-text="${text}" onclick="useChip(this.dataset.text)">${text}</button>`
   ).join('');
   chips.classList.remove('hidden');
 }
@@ -1632,7 +1632,14 @@ async function sendMessage() {
         })
       });
 
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        const code = response.status;
+        if (code === 401) throw new Error('API키가 잘못됐거나 만료됐어요 (401)');
+        if (code === 429) throw new Error('API 사용량 한도 초과예요 (429). 잠시 후 다시 시도해 주세요.');
+        if (code === 400) throw new Error(`요청 형식 오류예요 (400): ${errBody?.error?.message || ''}`);
+        throw new Error(`API 오류 ${code}: ${errBody?.error?.message || response.statusText}`);
+      }
       const data = await response.json();
       reply = data.choices[0].message.content;
       chatHistory.push({ role: 'assistant', content: reply });
@@ -1647,9 +1654,9 @@ async function sendMessage() {
 
   } catch (err) {
     removeTyping();
-    const errMsg = 'API 연결에 문제가 생겼어요 😅\nAPI 키를 확인해 주세요.';
+    const errMsg = `API 연결 오류 😅\n${err.message || 'API 키를 확인해 주세요.'}`;
     addBotMessage(errMsg);
-    console.error(err);
+    console.error('[SpongChat API Error]', err);
   }
 
   isTyping = false;
