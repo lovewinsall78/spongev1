@@ -5,18 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>스펀지맵 관리자</title>
   <style>
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
       --primary: #6C63FF;
       --primary-light: #a78bfa;
+      --accent: #C8F442;
+      --accent-dark: #111910;
       --bg: #0b0b1e;
       --bg2: #13132b;
-      --surface: rgba(255,255,255,0.05);
-      --border: rgba(255,255,255,0.10);
+      --surface: rgba(255,255,255,0.06);
+      --surface2: rgba(255,255,255,0.10);
+      --border: rgba(255,255,255,0.12);
       --text: #ffffff;
-      --text2: rgba(255,255,255,0.5);
+      --text2: rgba(255,255,255,0.55);
       --success: #34d399;
+      --warning: #fbbf24;
       --danger: #f87171;
     }
 
@@ -25,752 +29,1593 @@
       color: var(--text);
       font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
       min-height: 100vh;
+      padding-bottom: 60px;
     }
 
     /* ── 헤더 ── */
-    header {
+    .admin-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 28px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg2);
       position: sticky;
       top: 0;
       z-index: 100;
     }
 
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header-logo .logo-text {
-      font-size: 18px;
+    .admin-header h1 {
+      font-size: 17px;
       font-weight: 900;
-      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .header-logo .admin-badge {
+    .admin-header span {
       font-size: 11px;
-      font-weight: 700;
-      color: var(--primary);
-      border: 1.5px solid var(--primary);
-      border-radius: 6px;
-      padding: 2px 8px;
-    }
-
-    .preview-btn {
-      padding: 8px 18px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: transparent;
       color: var(--text2);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 0.2s, color 0.2s;
-    }
-
-    .preview-btn:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    /* ── 레이아웃 ── */
-    main {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 36px 24px 60px;
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-
-    /* ── 섹션 카드 ── */
-    .section-card {
-      background: var(--bg2);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
+      border-radius: 8px;
+      padding: 4px 10px;
     }
 
-    .section-header {
+    /* ── 탭 ── */
+    .tab-bar {
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 20px 24px;
+      gap: 2px;
+      padding: 14px 24px 0;
       border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: var(--bg);
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+
+    .tab {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
     }
 
-    .section-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(108,99,255,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
+    .tab.active {
+      background: var(--bg2);
+      border-color: var(--border);
+      color: var(--text);
+      border-bottom: 1px solid var(--bg2);
+      margin-bottom: -1px;
+    }
+
+    .tab-content { display: none; padding: 20px 24px; }
+    .tab-content.active { display: block; }
+
+    /* ── 섹션 ── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
     }
 
     .section-title {
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 800;
-    }
-
-    .section-desc {
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 2px;
-    }
-
-    .section-body {
-      padding: 24px;
+      color: var(--primary-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      gap: 8px;
     }
 
-    /* ── 폼 요소 ── */
-    .field-label {
-      font-size: 12px;
+    .badge-pill {
+      font-size: 10px;
+      background: rgba(108,99,255,0.2);
+      border: 1px solid rgba(108,99,255,0.4);
+      border-radius: 6px;
+      padding: 2px 7px;
+      color: var(--primary-light);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 600;
+    }
+
+    /* ── 폼 ── */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 11px;
       font-weight: 700;
       color: var(--text2);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
+      letter-spacing: 0.2px;
     }
 
-    .field-input {
+    .hint {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 5px;
+      line-height: 1.5;
+      opacity: 0.7;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"],
+    textarea, select {
       width: 100%;
-      background: var(--surface);
+      background: var(--bg);
       border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 15px;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 13px;
       color: var(--text);
       font-family: inherit;
       outline: none;
       transition: border-color 0.2s;
-    }
-
-    .field-input:focus { border-color: var(--primary); }
-    .field-input::placeholder { color: var(--text2); }
-
-    textarea.field-input {
       resize: vertical;
-      min-height: 80px;
-      line-height: 1.6;
     }
 
-    .char-count {
-      font-size: 11px;
-      color: var(--text2);
-      text-align: right;
-      margin-top: -8px;
-    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+    input::placeholder, textarea::placeholder { color: var(--text2); }
+    select option { background: #1a1a2e; }
 
-    .char-count.warn { color: var(--danger); }
-
-    /* ── 미리보기 ── */
-    .preview-box {
-      background: #1a1a35;
-      border-radius: 14px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .preview-label {
-      font-size: 11px;
-      color: var(--text2);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .bubble-preview {
-      background: rgba(255,255,255,0.95);
-      color: #1a1a2e;
-      font-size: 15px;
-      font-weight: 700;
-      padding: 12px 22px;
-      border-radius: 24px;
-      position: relative;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      word-break: keep-all;
-      text-align: center;
-      max-width: 280px;
-    }
-
-    .bubble-preview::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: rgba(255,255,255,0.95);
-      border-bottom: none;
-    }
-
-    .bubble-char-hint {
-      font-size: 32px;
-      margin-top: 8px;
-    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
     /* ── 버튼 ── */
-    .btn-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-save {
-      flex: 1;
-      padding: 14px;
-      border-radius: 12px;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border-radius: 10px;
       border: none;
-      background: linear-gradient(135deg, var(--primary), var(--primary-light));
-      color: #fff;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 6px 20px rgba(108,99,255,0.35);
+      transition: all 0.18s;
+      font-family: inherit;
+      white-space: nowrap;
     }
 
-    .btn-save:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+    }
 
-    .btn-reset {
-      padding: 14px 18px;
-      border-radius: 12px;
+    .btn-accent {
+      background: var(--accent);
+      color: var(--accent-dark);
+      font-weight: 800;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
       border: 1.5px solid var(--border);
-      background: transparent;
-      color: var(--text2);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
+      color: var(--text);
     }
 
-    .btn-reset:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-danger {
+      background: rgba(248,113,113,0.12);
+      border: 1.5px solid rgba(248,113,113,0.35);
+      color: var(--danger);
+    }
+
+    .btn-sm { padding: 7px 13px; font-size: 11px; border-radius: 8px; }
+    .btn-full { width: 100%; }
+    .btn:active { opacity: 0.85; transform: scale(0.97); }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ── 상태 뱃지 ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    .status-badge.ok { background: rgba(52,211,153,0.12); color: var(--success); border: 1px solid rgba(52,211,153,0.3); }
+    .status-badge.warn { background: rgba(251,191,36,0.12); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+    .status-badge.err { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+
+    /* ── 통계 ── */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 26px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+    /* ── 장소 목록 ── */
+    .place-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .place-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .place-item:hover { border-color: rgba(108,99,255,0.4); }
+
+    .place-cat-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .cat-heal  { background: rgba(52,211,153,0.15); }
+    .cat-color { background: rgba(251,191,36,0.15); }
+    .cat-taste { background: rgba(248,113,113,0.15); }
+    .cat-exp   { background: rgba(108,99,255,0.15); }
+
+    .place-info { flex: 1; min-width: 0; }
+    .place-name { font-size: 13px; font-weight: 700; }
+    .place-sub { font-size: 11px; color: var(--text2); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .place-coord { font-size: 10px; font-family: monospace; color: rgba(200,244,66,0.7); }
+
+    .place-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .icon-btn {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:hover { border-color: rgba(108,99,255,0.5); color: var(--text); }
+    .icon-btn.del:hover { border-color: rgba(248,113,113,0.5); color: var(--danger); }
+
+    /* ── 빈 상태 ── */
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    .empty-state .big { font-size: 32px; margin-bottom: 8px; }
+
+    /* ── 캐릭터 카드 ── */
+    .char-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px;
+      background: var(--bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .char-row:hover { border-color: rgba(108,99,255,0.4); }
+
+    .char-icon { font-size: 26px; flex-shrink: 0; }
+    .char-info { flex: 1; }
+    .char-info strong { font-size: 13px; display: block; }
+    .char-info span { font-size: 11px; color: var(--text2); }
+    .char-arrow { color: var(--text2); }
+
+    /* ── 모달 ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--bg2);
+      border-radius: 20px 20px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      padding: 20px 20px 36px;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+
+    .modal-title { font-size: 15px; font-weight: 800; margin-bottom: 16px; }
 
     /* ── 토스트 ── */
     #toast {
       position: fixed;
-      bottom: 32px;
+      bottom: 28px;
       left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--success);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 12px 24px;
-      border-radius: 50px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
-      z-index: 999;
-      pointer-events: none;
-    }
-
-    #toast.show { transform: translateX(-50%) translateY(0); }
-
-    /* ── 정보 박스 ── */
-    .info-box {
-      display: flex;
-      gap: 10px;
-      padding: 14px 16px;
-      background: rgba(108,99,255,0.08);
-      border: 1px solid rgba(108,99,255,0.2);
-      border-radius: 12px;
+      transform: translateX(-50%) translateY(14px);
+      background: rgba(52,211,153,0.96);
+      color: #0b2e20;
       font-size: 13px;
+      font-weight: 700;
+      padding: 11px 20px;
+      border-radius: 50px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── 프롬프트 프리뷰 ── */
+    .preview-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.7;
       color: var(--text2);
-      line-height: 1.5;
+      min-height: 48px;
+      white-space: pre-wrap;
+      word-break: keep-all;
     }
 
-    .info-box .info-icon { font-size: 16px; flex-shrink: 0; }
+    /* ── 분리선 ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
 
-    /* ── 슈퍼 관리자 ── */
-    .super-lock {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 16px; padding: 32px 24px; text-align: center;
-    }
-    .lock-icon { font-size: 40px; }
-    .lock-title { font-size: 16px; font-weight: 800; }
-    .lock-desc { font-size: 13px; color: var(--text2); }
-    .lock-row { display: flex; gap: 10px; width: 100%; max-width: 320px; }
-    .lock-input {
-      flex: 1; background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 12px; padding: 12px 16px; font-size: 15px;
-      color: var(--text); font-family: inherit; outline: none;
-      transition: border-color 0.2s;
-    }
-    .lock-input:focus { border-color: var(--primary); }
-    .lock-btn {
-      padding: 12px 20px; border-radius: 12px; border: none;
-      background: linear-gradient(135deg, var(--primary), var(--primary-light));
-      color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
-    }
-    #super-content { display: none; }
-    #super-content.unlocked { display: block; }
+    /* ── 로그 ── */
+    .log-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
 
-    .section-card.super-card {
-      border-color: rgba(255,209,102,0.25);
-    }
-    .section-card.super-card .section-icon {
-      background: rgba(255,209,102,0.12);
-    }
-    .admin-badge.super {
-      border-color: #FFD166; color: #FFD166;
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      padding: 9px 12px;
+      background: var(--bg);
+      border-radius: 9px;
+      border: 1px solid var(--border);
     }
 
-    .prompt-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-    .prompt-tab {
-      padding: 8px 18px; border-radius: 20px; border: 1.5px solid var(--border);
-      background: transparent; color: var(--text2); font-size: 13px;
-      font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit;
-    }
-    .prompt-tab.active {
-      background: rgba(108,99,255,0.18); border-color: var(--primary);
-      color: var(--text);
+    .log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .log-dot.blue { background: #60a5fa; }
+    .log-dot.gold { background: #fbbf24; }
+    .log-dot.place { background: var(--accent); }
+    .log-dot.sys  { background: var(--primary-light); }
+    .log-time { color: var(--text2); flex-shrink: 0; }
+    .log-text { flex: 1; }
+
+    /* ── API key ── */
+    .api-key-wrap { position: relative; }
+
+    .api-key-wrap input {
+      padding-right: 46px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      letter-spacing: 0.5px;
     }
 
-    .limit-row { display: flex; align-items: center; gap: 12px; }
-    .limit-row input[type=number] {
-      width: 100px; background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 10px; padding: 10px 14px; font-size: 15px;
-      color: var(--text); font-family: inherit; outline: none;
+    .api-key-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 4px;
     }
-    .limit-row input[type=number]:focus { border-color: var(--primary); }
-    .limit-row span { font-size: 14px; color: var(--text2); }
 
-    .usage-stat {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 18px; background: rgba(108,99,255,0.07);
-      border-radius: 12px; border: 1px solid rgba(108,99,255,0.15);
+    /* ── 카테고리 칩 ── */
+    .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .cat-chip {
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
     }
-    .usage-stat .stat-label { font-size: 13px; color: var(--text2); }
-    .usage-stat .stat-val { font-size: 18px; font-weight: 900; color: var(--primary-light); }
 
-    .warn-box {
-      display: flex; gap: 10px; padding: 14px 16px;
-      background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
-      border-radius: 12px; font-size: 13px; color: #f87171; line-height: 1.5;
+    .cat-chip.on { background: rgba(200,244,66,0.15); border-color: var(--accent); color: var(--accent); }
+    .cat-chip:active { transform: scale(0.96); }
+
+    /* ── 통합 상태 ── */
+    .integration-card {
+      background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(200,244,66,0.08));
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .integration-title {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .integration-desc {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    @media (min-width: 640px) {
+      .tab-content { max-width: 720px; margin: 0 auto; }
     }
   </style>
 </head>
 <body>
 
-<!-- 헤더 -->
-<header>
-  <div class="header-logo">
-    <div class="logo-text">스펀지맵</div>
-    <div class="admin-badge">ADMIN</div>
+<div class="admin-header">
+  <h1>⚙️ 스펀지맵 관리자</h1>
+  <span id="header-date">—</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('dashboard')">📊 현황</button>
+  <button class="tab" onclick="switchTab('places')">🗺️ 장소</button>
+  <button class="tab" onclick="switchTab('chars')">🎭 캐릭터</button>
+  <button class="tab" onclick="switchTab('api')">🔑 API</button>
+  <button class="tab" onclick="switchTab('content')">✏️ UI문구</button>
+  <button class="tab" onclick="switchTab('limits')">🚦 운영</button>
+  <button class="tab" onclick="switchTab('super')" style="color:#fbbf24;">🔐 슈퍼관리자</button>
+</div>
+
+<!-- ══ TAB 1: 현황 ══ -->
+<div class="tab-content active" id="tab-dashboard">
+
+  <div class="integration-card">
+    <div class="integration-title">🔗 스펀지맵 플랫폼 연동 상태</div>
+    <div class="integration-desc">
+      랜딩(힐링포인트 탐색) → 스펀지 채팅(감정 대화) → 장소 추천 카드 출력
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div id="conn-api" class="status-badge warn">⚠️ API 키 미설정</div>
+      <div id="conn-places" class="status-badge warn">📍 장소 0개</div>
+    </div>
   </div>
-  <a href="index.html" class="preview-btn" target="_blank">← 랜딩 보기</a>
-</header>
 
-<main>
-
-  <!-- ── 섹션: 도입 문구 ── -->
-  <div class="section-card">
-    <div class="section-header">
-      <div class="section-icon">💬</div>
-      <div>
-        <div class="section-title">도입 문구 설정</div>
-        <div class="section-desc">첫 화면 캐릭터 위 말풍선에 표시되는 문구예요</div>
+  <div class="section">
+    <div class="section-title">📈 오늘 사용 현황</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-today">0</div>
+        <div class="stat-label">오늘 대화</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-limit">∞</div>
+        <div class="stat-label">일일 한도</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-places">0</div>
+        <div class="stat-label">등록 장소</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">누적 대화</div>
       </div>
     </div>
-    <div class="section-body">
+  </div>
 
-      <!-- 미리보기 -->
-      <div class="preview-box">
-        <div class="preview-label">미리보기</div>
-        <div class="bubble-preview" id="bubble-preview">준비되셨나요, 터치해 주세요</div>
-        <div class="bubble-char-hint">🟣</div>
+  <div class="section">
+    <div class="section-title">⚡ 빠른 액션</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-ghost btn-full" onclick="switchTab('places')">🗺️ 장소 추가하기</button>
+      <button class="btn btn-ghost btn-full" onclick="resetTodayCount()">🔄 오늘 사용량 초기화</button>
+      <button class="btn btn-ghost btn-full" onclick="exportSettings()">📤 설정 내보내기</button>
+      <button class="btn btn-ghost btn-full" onclick="document.getElementById('import-file').click()">📥 설정 가져오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importSettings(event)">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📋 최근 활동</div>
+    <ul class="log-list" id="activity-log">
+      <li class="log-item"><span class="log-time">—</span><span class="log-text">로그 없음</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══ TAB 2: 장소 관리 ══ -->
+<div class="tab-content" id="tab-places">
+
+  <div class="section">
+    <div class="section-title">📍 힐링포인트 DB <span class="badge-pill" id="place-count-badge">0개</span></div>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:14px;">
+      여기서 등록한 장소가 스펀지 캐릭터의 추천 DB가 됩니다.<br>
+      AI가 감정 대화 후 이 목록에서 맞는 장소를 골라 카드로 출력해요.
+    </p>
+    <div id="place-list-wrap">
+      <div class="empty-state">
+        <div class="big">📍</div>
+        등록된 힐링포인트가 없어요<br>아래 버튼으로 첫 장소를 추가해 보세요
       </div>
+    </div>
+    <button class="btn btn-accent btn-full" onclick="openPlaceModal()">+ 힐링포인트 추가</button>
+  </div>
 
-      <!-- 입력 -->
-      <div>
-        <div class="field-label">말풍선 문구</div>
-        <input
-          type="text"
-          class="field-input"
-          id="intro-text"
-          placeholder="예: 준비되셨나요, 터치해 주세요"
-          maxlength="30"
-          oninput="onIntroInput(this)"
-        />
-        <div class="char-count" id="intro-count">0 / 30</div>
+  <div class="section">
+    <div class="section-title">📦 샘플 데이터 <span class="badge-pill">안성 창조관광</span></div>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:12px;">
+      스펀지맵 아티팩트의 안성 힐링포인트 6개를 불러와요.
+    </p>
+    <button class="btn btn-ghost btn-full" onclick="loadSamplePlaces()">샘플 6개 불러오기</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🤖 AI 장소 추천 프롬프트 미리보기</div>
+    <div class="preview-box" id="place-prompt-preview">장소를 추가하면 AI 프롬프트가 자동으로 생성돼요.</div>
+    <p class="hint" style="margin-top:8px;">이 내용이 스펀지 블루·골드의 시스템 프롬프트 뒤에 자동으로 추가돼요.</p>
+  </div>
+</div>
+
+<!-- ══ TAB 3: 캐릭터 ══ -->
+<div class="tab-content" id="tab-chars">
+  <div class="section">
+    <div class="section-title">🎭 캐릭터 프롬프트</div>
+    <p style="font-size:12px; color:var(--text2); margin-bottom:14px; line-height:1.6;">
+      장소 DB는 자동으로 프롬프트에 추가되므로,<br>성격·말투·대화 방식만 여기서 수정하세요.
+    </p>
+    <div class="char-row" onclick="openCharModal('blue')">
+      <div class="char-icon">🟣</div>
+      <div class="char-info">
+        <strong>스펀지 블루</strong>
+        <span>차분하고 공감적인 치유 가이드</span>
       </div>
-
-      <div class="info-box">
-        <span class="info-icon">💡</span>
-        <span>20자 이내로 짧고 임팩트 있게 써야 말풍선이 예쁘게 보여요!</span>
+      <div class="char-arrow">›</div>
+    </div>
+    <div class="char-row" onclick="openCharModal('gold')">
+      <div class="char-icon">🟡</div>
+      <div class="char-info">
+        <strong>스펀지 골드</strong>
+        <span>밝고 활기찬 회복 친구</span>
       </div>
+      <div class="char-arrow">›</div>
+    </div>
+  </div>
 
+  <div class="section">
+    <div class="section-title">🔁 프롬프트 초기화</div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-sm" onclick="resetPrompt('blue')">🟣 블루 초기화</button>
+      <button class="btn btn-danger btn-sm" onclick="resetPrompt('gold')">🟡 골드 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: API ══ -->
+<div class="tab-content" id="tab-api">
+
+  <div class="section">
+    <div class="section-title">🔑 OpenAI API 키</div>
+    <div class="field">
+      <label>API Key</label>
+      <div class="api-key-wrap">
+        <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off" />
+        <button class="api-key-toggle" onclick="toggleApiVis()">👁</button>
+      </div>
+      <p class="hint">클라이언트 localStorage에만 저장되며 서버로 전송되지 않아요.</p>
+    </div>
+    <div id="api-key-status" class="status-badge warn" style="margin-bottom:12px;">⚠️ 미설정</div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="saveApiKey()">저장</button>
+      <button class="btn btn-ghost btn-sm" onclick="testApiKey()">🧪 연결 테스트</button>
+      <button class="btn btn-danger btn-sm" onclick="clearApiKey()">삭제</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🤖 모델 설정</div>
+    <div class="field">
+      <label>사용 모델</label>
+      <select id="model-select">
+        <option value="gpt-4o-mini">gpt-4o-mini (권장 · 저비용)</option>
+        <option value="gpt-4o">gpt-4o (고품질 · 비용 높음)</option>
+        <option value="gpt-3.5-turbo">gpt-3.5-turbo (구모델)</option>
+      </select>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Max Tokens</label>
+        <input type="number" id="max-tokens-input" value="300" min="100" max="1000" />
+      </div>
+      <div class="field">
+        <label>Temperature</label>
+        <input type="number" id="temperature-input" value="0.8" min="0" max="2" step="0.1" />
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveModelSettings()">모델 설정 저장</button>
+  </div>
+</div>
+
+<!-- ══ TAB 5: UI 문구 통합 관리 ══ -->
+<div class="tab-content" id="tab-content">
+  <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:14px;">
+    📝 스펀지 앱 전체의 화면 문구를 한 곳에서 관리하세요.<br>
+    저장 후 index.html 새로고침 시 바로 반영돼요.
+  </p>
+
+  <div class="section">
+    <div class="section-title">🎬 인트로 화면</div>
+    <div class="field">
+      <label>말풍선 문구 (최대 30자)</label>
+      <input type="text" id="intro-text-input" placeholder="준비되셨나요, 터치해 주세요" maxlength="30" oninput="updateIntroPreview()" />
+    </div>
+    <div class="preview-box" id="intro-preview">준비되셨나요, 터치해 주세요</div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="saveContentSettings()">저장</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetIntroText()">기본값</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">👫 캐릭터 선택 화면</div>
+    <div class="field">
+      <label>화면 제목 문구 (index.html 소스 편집 필요)</label>
+      <input type="text" id="select-title-input" placeholder="지금 함께 여행하고픈 친구" />
+      <p class="hint">현재: "지금 함께 여행하고픈 친구" — 변경 시 index.html 직접 수정</p>
+    </div>
+    <div class="field">
+      <label>부제 문구</label>
+      <input type="text" id="select-subtitle-input" placeholder="Feel. Learn. Become. 🌱" maxlength="40" />
+    </div>
+    <div class="field">
+      <label>시작 버튼 문구 (최대 15자)</label>
+      <input type="text" id="start-btn-input" placeholder="여행 시작하기 →" maxlength="15" />
+      <p class="hint">현재 기본값: "여행 시작하기 →"</p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveSelectSettings()">저장</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">👋 첫 인사 메시지</div>
+    <div class="field">
+      <textarea id="greeting-text-input" rows="4" placeholder="비워두면 랜덤 3가지 중 하나가 표시돼요"></textarea>
+      <p class="hint">고정 메시지 원하면 입력 · 비우면 랜덤 모드</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="saveContentSettings()">저장</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearGreeting()">랜덤 모드로</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💬 입력창 플레이스홀더</div>
+    <div class="field">
+      <input type="text" id="placeholder-input" placeholder="지금 기분이 어떠세요? 솔직하게 말해줘도 돼요 🌿" maxlength="50" />
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="savePlaceholder()">저장</button>
+  </div>
+</div>
+
+<!-- ══ TAB 7: 슈퍼관리자 ══ -->
+<div class="tab-content" id="tab-super">
+
+  <!-- 잠금 화면 -->
+  <div id="super-lock" style="text-align:center; padding:60px 20px;">
+    <div style="font-size:48px; margin-bottom:16px;">🔐</div>
+    <div style="font-size:18px; font-weight:800; margin-bottom:8px;">슈퍼 관리자</div>
+    <div style="font-size:13px; color:var(--text2); margin-bottom:24px; line-height:1.6;">
+      스펀지맵 핵심 프롬프트 시스템을 제어합니다.<br>
+      마스터 비밀번호를 입력해 주세요.
+    </div>
+    <div style="max-width:280px; margin:0 auto;">
+      <input type="password" id="super-pw-input" placeholder="마스터 비밀번호" style="text-align:center; margin-bottom:12px;" onkeydown="if(event.key==='Enter') superLogin()" />
+      <button class="btn btn-primary btn-full" onclick="superLogin()">🔓 입장하기</button>
+      <p style="font-size:11px; color:var(--text2); margin-top:12px;">기본 비밀번호: sponge2024!</p>
+    </div>
+  </div>
+
+  <!-- 관리 패널 (잠금 해제 후 노출) -->
+  <div id="super-panel" style="display:none;">
+
+    <div class="integration-card" style="margin-bottom:14px;">
+      <div class="integration-title">🧠 스펀지맵 핵심 아키텍처</div>
+      <div class="integration-desc">
+        <strong>Custom GPT 시스템 프롬프트</strong>가 이 앱의 두뇌입니다.<br>
+        ① 이곳에 ChatGPT Custom GPT 지시문 입력<br>
+        ② AI가 대화할 때 자동으로 이 프롬프트를 기반으로 작동<br>
+        ③ 아래 칩 문구는 대화 시작 제안 버튼으로 노출됩니다
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🤖 Custom GPT 시스템 프롬프트 <span class="badge-pill">핵심 · BACKEND</span></div>
+      <div class="field">
+        <textarea id="super-prompt-input" rows="14"
+          placeholder="ChatGPT Custom GPT 지시문 전체를 붙여넣으세요.
+
+예시:
+당신은 스펀지맵의 감정 기반 공간 추천 AI입니다.
+사용자의 감정을 5단계로 탐색하고, 치유가 필요한 장소를 추천합니다.
+
+[감정 성향 분류]
+활력추구형 / 안정탐색형 / 관계회복형 / 호기심확장형 / 자기성찰형 / 휴식몰입형
+
+[5단계 대화 흐름]
+1단계 자각 → 2단계 원인탐색 → 3단계 공간연결 → 4단계 자기성찰 → 5단계 확장"></textarea>
+        <p class="hint">
+          이 내용이 index.html의 AI 시스템 프롬프트에 자동으로 주입됩니다.<br>
+          Custom GPT: <a href="https://chatgpt.com/g/g-693419b82e6c8191a1658316a6a675c9" target="_blank" style="color:var(--primary-light);">스펀지맵 v4.0</a>에서 지시문을 복사하세요.
+        </p>
+      </div>
+      <div id="super-prompt-status" class="status-badge warn" style="margin-bottom:12px;">⚠️ 미설정</div>
       <div class="btn-row">
-        <button class="btn-save" onclick="saveIntro()">저장하기</button>
-        <button class="btn-reset" onclick="resetIntro()">기본값으로</button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ── 섹션: 캐릭터 인사말 ── -->
-  <div class="section-card">
-    <div class="section-header">
-      <div class="section-icon">🗣️</div>
-      <div>
-        <div class="section-title">첫 인사말 설정</div>
-        <div class="section-desc">채팅 시작 시 캐릭터가 처음 건네는 말이에요</div>
+        <button class="btn btn-primary" onclick="saveSuperPrompt()">💾 프롬프트 저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSuperPrompt()">삭제</button>
       </div>
     </div>
-    <div class="section-body">
 
-      <div>
-        <div class="field-label">인사말 (줄바꿈 가능)</div>
-        <textarea
-          class="field-input"
-          id="greeting-text"
-          placeholder="예: 안녕하세요! 가평 상면을 함께 탐험해요 🌿"
-          maxlength="80"
-          oninput="onGreetingInput(this)"
-        ></textarea>
-        <div class="char-count" id="greeting-count">0 / 80</div>
+    <div class="section">
+      <div class="section-title">💬 대화 제안 칩 관리 <span class="badge-pill">채팅 버튼</span></div>
+      <p style="font-size:12px; color:var(--text2); margin-bottom:12px; line-height:1.6;">
+        채팅 화면 하단에 노출되는 제안 버튼 문구입니다.<br>
+        Custom GPT 지시문의 감정 예시에서 추출하거나 직접 입력하세요.
+      </p>
+      <div class="field">
+        <label>칩 문구 (한 줄에 하나씩)</label>
+        <textarea id="chips-input" rows="10"
+          placeholder="요즘 자꾸 지쳐요
+아무것도 하기 싫어요
+혼자 있고 싶어요
+기분 전환이 필요해요
+스트레스가 너무 많아요
+누군가가 그리워요
+새로운 자극이 필요해요
+무기력한 기분이에요
+불안한 마음이 있어요
+설레는 기분이에요
+자연 속에 있고 싶어요
+뭔가 변화가 필요해요"></textarea>
+        <p class="hint">한 줄 = 칩 1개. 최소 6개 권장. 대화 시 랜덤 4개가 노출됩니다.</p>
       </div>
-
-      <div class="info-box">
-        <span class="info-icon">💡</span>
-        <span>캐릭터 선택 후 채팅창 첫 메시지로 표시돼요. 비워두면 기본 인사말이 나와요.</span>
-      </div>
-
       <div class="btn-row">
-        <button class="btn-save" onclick="saveGreeting()">저장하기</button>
-        <button class="btn-reset" onclick="resetGreeting()">기본값으로</button>
+        <button class="btn btn-primary btn-sm" onclick="saveChips()">💾 칩 저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="extractChipsFromPrompt()">🤖 프롬프트에서 자동추출</button>
+        <button class="btn btn-danger btn-sm" onclick="resetChips()">초기화</button>
       </div>
-
+      <div id="chips-count" style="font-size:11px; color:var(--text2); margin-top:8px;"></div>
     </div>
+
+    <div class="section">
+      <div class="section-title">🔑 마스터 비밀번호 변경</div>
+      <div class="row-2">
+        <div class="field">
+          <label>새 비밀번호</label>
+          <input type="password" id="new-pw-input" placeholder="새 비밀번호" />
+        </div>
+        <div class="field">
+          <label>확인</label>
+          <input type="password" id="new-pw-confirm" placeholder="다시 입력" />
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="changeSuperPw()">비밀번호 변경</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">⚠️ 위험 감지 설정 <span class="badge-pill">특허 CAUTION 플래그</span></div>
+      <p style="font-size:12px; color:var(--text2); margin-bottom:12px; line-height:1.6;">
+        사용자가 우울·자해 관련 발언 시 위험 감지 메시지를 표시하고<br>
+        위기상담 연락처(1393, 1577-0199)를 자동으로 안내합니다.
+      </p>
+      <div class="field">
+        <label>추가 위험 감지 키워드 (쉼표로 구분)</label>
+        <input type="text" id="risk-keywords-input" placeholder="추가할 키워드 (이미 내장된 기본 키워드 외 추가)" />
+        <p class="hint">기본 내장: 죽고싶, 사라지고싶, 없어지고싶, 자해, 포기하고싶, 살기싫</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="saveRiskKeywords()">저장</button>
+    </div>
+
+    <div style="text-align:center; padding:20px 0;">
+      <button class="btn btn-ghost btn-sm" onclick="superLogout()">🔒 슈퍼관리자 잠금</button>
+    </div>
+
+  </div><!-- /super-panel -->
+</div>
+
+<!-- ══ TAB 6: 운영 ══ -->
+<div class="tab-content" id="tab-limits">
+  <div class="section">
+    <div class="section-title">🚦 일일 한도</div>
+    <div class="field">
+      <label>일일 대화 횟수 (0 = 무제한)</label>
+      <input type="number" id="daily-limit-input" min="0" max="9999" placeholder="0" />
+      <p class="hint">기기 기준 하루 최대 메시지 수. 0이면 제한 없음.</p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveLimitSettings()">저장</button>
   </div>
 
-  <!-- ── 슈퍼 관리자 섹션 ── -->
-  <div class="section-card super-card">
-    <div class="section-header">
-      <div class="section-icon">🔐</div>
-      <div>
-        <div class="section-title">슈퍼 관리자</div>
-        <div class="section-desc">API 키 · AI 프롬프트 · 사용량 제한 설정</div>
+  <div class="section">
+    <div class="section-title">ℹ️ 저장소 현황</div>
+    <div id="storage-info" style="font-size:11px; color:var(--text2); line-height:2;">—</div>
+    <hr class="divider">
+    <button class="btn btn-danger btn-sm btn-full" onclick="confirmReset()">🗑️ 모든 설정 초기화</button>
+  </div>
+</div>
+
+<!-- ══ 장소 추가/수정 모달 ══ -->
+<div class="modal-overlay" id="place-modal" onclick="closePlaceModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="place-modal-title">📍 힐링포인트 추가</div>
+
+    <input type="hidden" id="place-edit-id" value="" />
+
+    <div class="field">
+      <label>장소명 *</label>
+      <input type="text" id="p-name" placeholder="예: 미리내마을 성지순례길" />
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>지역</label>
+        <input type="text" id="p-location" placeholder="예: 경기 안성시" />
       </div>
-      <div class="admin-badge super" style="margin-left:auto">SUPER</div>
+      <div class="field">
+        <label>카테고리 *</label>
+        <select id="p-cat">
+          <option value="heal">🌿 힐링·치유</option>
+          <option value="color">🎨 색깔·감성</option>
+          <option value="taste">🍽️ 맛깔·음식</option>
+          <option value="exp">🎭 끼깔·체험</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>짧은 설명 (AI 추천 시 사용)</label>
+      <textarea id="p-desc" rows="3" placeholder="이 장소의 감성적 특징, 추천 이유를 써주세요"></textarea>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>위도 (Latitude)</label>
+        <input type="text" id="p-lat" placeholder="예: 36.9842" />
+      </div>
+      <div class="field">
+        <label>경도 (Longitude)</label>
+        <input type="text" id="p-lng" placeholder="예: 127.2510" />
+      </div>
+    </div>
+    <div class="field">
+      <label>감성 키워드 (쉼표로 구분)</label>
+      <input type="text" id="p-tags" placeholder="예: 마음성찰, 산책, 고요함, 자연" />
+    </div>
+    <div class="field">
+      <label>네이버지도 / 카카오맵 링크 (선택)</label>
+      <input type="text" id="p-link" placeholder="https://map.naver.com/..." />
     </div>
 
-    <!-- 잠금 해제 UI -->
-    <div class="super-lock" id="super-lock">
-      <div class="lock-icon">🔒</div>
-      <div class="lock-title">슈퍼 관리자 전용 구역</div>
-      <div class="lock-desc">접근 비밀번호를 입력해 주세요</div>
-      <div class="lock-row">
-        <input type="password" class="lock-input" id="super-pw-input"
-          placeholder="비밀번호" onkeydown="if(event.key==='Enter') superUnlock()"/>
-        <button class="lock-btn" onclick="superUnlock()">확인</button>
-      </div>
-      <div id="super-pw-err" style="font-size:12px;color:var(--danger);display:none">
-        비밀번호가 틀렸어요
-      </div>
-    </div>
-
-    <!-- 잠금 해제 후 콘텐츠 -->
-    <div id="super-content">
-      <div class="section-body" style="border-top:1px solid var(--border)">
-
-        <!-- 오늘 사용량 현황 -->
-        <div class="field-label">📊 오늘 API 사용 현황</div>
-        <div class="usage-stat">
-          <span class="stat-label">오늘 대화 횟수</span>
-          <span class="stat-val" id="stat-today">0 회</span>
-        </div>
-        <div class="usage-stat">
-          <span class="stat-label">일일 제한</span>
-          <span class="stat-val" id="stat-limit">무제한</span>
-        </div>
-
-        <!-- 일일 사용량 제한 -->
-        <div>
-          <div class="field-label">⚡ 일일 대화 횟수 제한</div>
-          <div class="limit-row">
-            <input type="number" id="daily-limit" min="0" max="9999" placeholder="0=무제한"/>
-            <span>회 / 일 &nbsp;(0 = 무제한)</span>
-          </div>
-          <div style="margin-top:8px">
-            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="saveLimit()">저장</button>
-            <button class="btn-reset" style="padding:10px 16px;font-size:13px;margin-left:8px" onclick="resetDailyCount()">오늘 카운트 초기화</button>
-          </div>
-        </div>
-
-        <!-- API 키 -->
-        <div>
-          <div class="field-label">🔑 OpenAI API 키</div>
-          <div class="warn-box" style="margin-bottom:10px">
-            <span>⚠️</span>
-            <span>API 키는 이 기기의 브라우저에만 저장돼요. 공용 PC에서는 사용 후 반드시 삭제하세요.</span>
-          </div>
-          <input type="password" class="field-input" id="api-key-input"
-            placeholder="sk-..."/>
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="saveApiKey()">저장</button>
-            <button class="btn-reset" style="padding:10px 16px;font-size:13px" onclick="clearApiKey()">삭제</button>
-          </div>
-        </div>
-
-        <!-- AI 시스템 프롬프트 -->
-        <div>
-          <div class="field-label">🤖 AI 캐릭터 시스템 프롬프트</div>
-          <div class="prompt-tabs">
-            <button class="prompt-tab active" onclick="switchPromptTab('blue',this)">💜 스펀지 블루</button>
-            <button class="prompt-tab" onclick="switchPromptTab('gold',this)">✨ 스펀지 골드</button>
-          </div>
-          <textarea class="field-input" id="prompt-blue" rows="10"
-            style="font-size:13px;line-height:1.6;font-family:monospace"
-            placeholder="스펀지 블루의 역할·말투·행동지침을 입력하세요..."></textarea>
-          <textarea class="field-input" id="prompt-gold" rows="10"
-            style="font-size:13px;line-height:1.6;font-family:monospace;display:none"
-            placeholder="스펀지 골드의 역할·말투·행동지침을 입력하세요..."></textarea>
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button class="btn-save" style="padding:10px 20px;font-size:13px" onclick="savePrompts()">프롬프트 저장</button>
-            <button class="btn-reset" style="padding:10px 16px;font-size:13px" onclick="resetPrompts()">기본값으로</button>
-          </div>
-        </div>
-
-        <!-- 비밀번호 변경 -->
-        <div style="border-top:1px solid var(--border);padding-top:16px">
-          <div class="field-label">🔒 슈퍼 관리자 비밀번호 변경</div>
-          <div style="display:flex;gap:8px">
-            <input type="password" class="field-input" id="new-pw" placeholder="새 비밀번호 (최소 4자)"/>
-            <button class="btn-save" style="padding:0 20px;font-size:13px;white-space:nowrap" onclick="changePassword()">변경</button>
-          </div>
-        </div>
-
-        <button class="btn-reset" style="width:100%;padding:12px" onclick="superLock()">🔒 잠금</button>
-      </div>
+    <div class="btn-row">
+      <button class="btn btn-accent" onclick="savePlaceItem()" style="flex:1;">저장하기</button>
+      <button class="btn btn-ghost" onclick="closePlaceModal()" style="flex:1;">취소</button>
     </div>
   </div>
+</div>
 
-</main>
+<!-- ══ 캐릭터 프롬프트 모달 ══ -->
+<div class="modal-overlay" id="char-modal" onclick="closeCharModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="char-modal-title">프롬프트 수정</div>
+    <div class="field">
+      <textarea id="prompt-textarea" rows="12"></textarea>
+      <p class="hint">장소 DB는 별도로 자동 주입되므로 성격·말투만 작성하세요.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveCharPrompt()" style="flex:1;">저장</button>
+      <button class="btn btn-ghost" onclick="closeCharModal()" style="flex:1;">닫기</button>
+    </div>
+  </div>
+</div>
 
-<!-- 토스트 -->
-<div id="toast">✅ 저장됐어요!</div>
+<!-- ══ 토스트 ══ -->
+<div id="toast"></div>
 
 <script>
-  const DEFAULT_INTRO    = '준비되셨나요, 터치해 주세요';
-  const DEFAULT_GREETING = '';
-
-  // ── 초기 로드 ──
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedIntro    = localStorage.getItem('sponge_intro_text')    || DEFAULT_INTRO;
-    const savedGreeting = localStorage.getItem('sponge_greeting_text') || DEFAULT_GREETING;
-
-    const introEl    = document.getElementById('intro-text');
-    const greetingEl = document.getElementById('greeting-text');
-
-    introEl.value    = savedIntro;
-    greetingEl.value = savedGreeting;
-
-    updateBubblePreview(savedIntro);
-    updateCount('intro-count',    savedIntro.length,    30);
-    updateCount('greeting-count', savedGreeting.length, 80);
-  });
-
-  // ── 입력 핸들러 ──
-  function onIntroInput(el) {
-    updateBubblePreview(el.value);
-    updateCount('intro-count', el.value.length, 30);
-  }
-
-  function onGreetingInput(el) {
-    updateCount('greeting-count', el.value.length, 80);
-  }
-
-  function updateBubblePreview(text) {
-    document.getElementById('bubble-preview').textContent = text || '(비어 있음)';
-  }
-
-  function updateCount(id, len, max) {
-    const el = document.getElementById(id);
-    el.textContent = `${len} / ${max}`;
-    el.classList.toggle('warn', len > max * 0.85);
-  }
-
-  // ── 저장 ──
-  function saveIntro() {
-    const val = document.getElementById('intro-text').value.trim();
-    if (!val) return alert('문구를 입력해 주세요!');
-    localStorage.setItem('sponge_intro_text', val);
-    showToast('도입 문구가 저장됐어요! ✅');
-  }
-
-  function saveGreeting() {
-    const val = document.getElementById('greeting-text').value.trim();
-    localStorage.setItem('sponge_greeting_text', val);
-    showToast('인사말이 저장됐어요! ✅');
-  }
-
-  // ── 초기화 ──
-  function resetIntro() {
-    if (!confirm('기본값으로 되돌릴까요?')) return;
-    localStorage.removeItem('sponge_intro_text');
-    document.getElementById('intro-text').value = DEFAULT_INTRO;
-    updateBubblePreview(DEFAULT_INTRO);
-    updateCount('intro-count', DEFAULT_INTRO.length, 30);
-    showToast('기본값으로 되돌렸어요');
-  }
-
-  function resetGreeting() {
-    if (!confirm('기본값으로 되돌릴까요?')) return;
-    localStorage.removeItem('sponge_greeting_text');
-    document.getElementById('greeting-text').value = '';
-    updateCount('greeting-count', 0, 80);
-    showToast('기본값으로 되돌렸어요');
-  }
-
-  // ── 토스트 ──
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-  }
-
-  // ══════════════════════════════
-  // 슈퍼 관리자
-  // ══════════════════════════════
-  const SUPER_PW_KEY   = 'sponge_super_pw';
-  const DEFAULT_SUPER_PW = 'sponge2025'; // 초기 비밀번호
-
-  const DEFAULT_PROMPT_BLUE = `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
+// ═══════════════════════════════════════════
+// 기본값
+// ═══════════════════════════════════════════
+const DEFAULT_BLUE = `너는 '스펀지 블루'야. SpongeMap의 감정 치유 AI 스펀지 캐릭터야.
 사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 천천히 풀어가는 대화를 해.
-말투는 차분하고 따뜻해. 반말은 쓰지 않고 '~요', '~해요' 같은 친근한 존댓말을 써.
-먼저 지금 감정 상태를 물어보고, 그 감정에 맞는 장소(자연, 공간, 체험)를 연결해줘.
-성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+말투는 차분하고 따뜻해. '~요', '~해요' 같은 친근한 존댓말을 써.
+감정 상태를 파악한 뒤, 아래 장소 DB에서 맞는 힐링포인트를 골라 카드 형식으로 추천해줘.
 모든 답변은 3~4문장 이내로 짧게. 🌿, 🍃, 💙 같은 차분한 이모지를 가끔 써줘.`;
 
-  const DEFAULT_PROMPT_GOLD = `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
-사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝고 따뜻하게 풀어가는 대화를 해.
+const DEFAULT_GOLD = `너는 '스펀지 골드'야. SpongeMap의 감정 회복 AI 스펀지 캐릭터야.
+사용자의 감정을 5단계(자각→원인탐색→공간연결→자기성찰→확장)로 밝게 풀어가는 대화를 해.
 말투는 활기차고 긍정적이야. '~요', '~해요'로 끝내되 생기 있는 느낌을 줘.
-먼저 지금 감정 상태를 물어보고, 그 감정에 활력을 불어넣는 장소(자연, 체험, 공간)를 연결해줘.
-성향군(활력추구형·안정탐색형·관계회복형·호기심확장형·자기성찰형·휴식몰입형)에 맞게 공감하고 반응해.
+감정 상태를 파악한 뒤, 아래 장소 DB에서 맞는 힐링포인트를 골라 카드 형식으로 추천해줘.
 모든 답변은 3~4문장 이내로 짧게. 😊, 🌻, ✨ 같은 밝은 이모지를 자주 써줘.`;
 
-  function getSuperPw() {
-    return localStorage.getItem(SUPER_PW_KEY) || DEFAULT_SUPER_PW;
+const CAT_ICON = { heal: '🌿', color: '🎨', taste: '🍽️', exp: '🎭' };
+const CAT_LABEL = { heal: '힐링·치유', color: '색깔·감성', taste: '맛깔·음식', exp: '끼깔·체험' };
+const CAT_CLASS = { heal: 'cat-heal', color: 'cat-color', taste: 'cat-taste', exp: 'cat-exp' };
+
+// ═══════════════════════════════════════════
+// 장소 DB (localStorage)
+// ═══════════════════════════════════════════
+function getPlaces() {
+  try { return JSON.parse(localStorage.getItem('sponge_places') || '[]'); } catch { return []; }
+}
+
+function savePlaces(arr) {
+  localStorage.setItem('sponge_places', JSON.stringify(arr));
+  updatePlacePrompt(arr);
+}
+
+function updatePlacePrompt(places) {
+  if (!places || places.length === 0) {
+    document.getElementById('place-prompt-preview').textContent = '장소를 추가하면 AI 프롬프트가 자동으로 생성돼요.';
+    return;
+  }
+  const lines = places.map((p, i) =>
+    `${i+1}. [${CAT_LABEL[p.cat] || p.cat}] ${p.name} (${p.location || ''}) — ${p.desc || ''} 키워드: ${p.tags || ''} 좌표: ${p.lat},${p.lng}`
+  ).join('\n');
+  const prompt = `\n\n[힐링포인트 DB - 총 ${places.length}개]\n${lines}\n\n장소 추천 시 위 DB에서 감정에 맞는 곳을 골라 아래 형식으로 출력해:\n📍 장소명 | 카테고리 | 지역\n💬 추천 이유 (1-2문장)\n🗺️ 좌표: lat, lng`;
+  document.getElementById('place-prompt-preview').textContent = prompt;
+  localStorage.setItem('sponge_place_prompt', prompt);
+}
+
+// ═══════════════════════════════════════════
+// 장소 목록 렌더링
+// ═══════════════════════════════════════════
+function renderPlaces() {
+  const places = getPlaces();
+  const wrap = document.getElementById('place-list-wrap');
+  const badge = document.getElementById('place-count-badge');
+  badge.textContent = places.length + '개';
+
+  if (places.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">📍</div>등록된 힐링포인트가 없어요<br>아래 버튼으로 첫 장소를 추가해 보세요</div>`;
+    return;
   }
 
-  function superUnlock() {
-    const input = document.getElementById('super-pw-input').value;
-    const err   = document.getElementById('super-pw-err');
-    if (input === getSuperPw()) {
-      document.getElementById('super-lock').style.display = 'none';
-      document.getElementById('super-content').classList.add('unlocked');
-      err.style.display = 'none';
-      loadSuperContent();
-    } else {
-      err.style.display = 'block';
-      document.getElementById('super-pw-input').value = '';
+  wrap.innerHTML = `<div class="place-list">${places.map((p, i) => `
+    <div class="place-item">
+      <div class="place-cat-dot ${CAT_CLASS[p.cat] || ''}">${CAT_ICON[p.cat] || '📍'}</div>
+      <div class="place-info">
+        <div class="place-name">${p.name}</div>
+        <div class="place-sub">
+          <span>${p.location || '위치 미입력'}</span>
+          <span>${CAT_LABEL[p.cat] || p.cat}</span>
+          ${p.lat ? `<span class="place-coord">${parseFloat(p.lat).toFixed(4)}°N · ${parseFloat(p.lng).toFixed(4)}°E</span>` : ''}
+        </div>
+      </div>
+      <div class="place-actions">
+        <button class="icon-btn" onclick="editPlace(${i})" title="수정">✏️</button>
+        <button class="icon-btn del" onclick="deletePlace(${i})" title="삭제">🗑</button>
+      </div>
+    </div>`).join('')}</div>`;
+
+  updatePlacePrompt(places);
+  document.getElementById('stat-places').textContent = places.length;
+  document.getElementById('conn-places').className = 'status-badge ok';
+  document.getElementById('conn-places').textContent = '📍 장소 ' + places.length + '개 등록됨';
+}
+
+// ═══════════════════════════════════════════
+// 장소 모달
+// ═══════════════════════════════════════════
+function openPlaceModal(editId = '') {
+  document.getElementById('place-edit-id').value = editId;
+  document.getElementById('place-modal-title').textContent = editId !== '' ? '📍 힐링포인트 수정' : '📍 힐링포인트 추가';
+  if (editId !== '') {
+    const places = getPlaces();
+    const p = places[parseInt(editId)];
+    if (p) {
+      document.getElementById('p-name').value = p.name || '';
+      document.getElementById('p-location').value = p.location || '';
+      document.getElementById('p-cat').value = p.cat || 'heal';
+      document.getElementById('p-desc').value = p.desc || '';
+      document.getElementById('p-lat').value = p.lat || '';
+      document.getElementById('p-lng').value = p.lng || '';
+      document.getElementById('p-tags').value = p.tags || '';
+      document.getElementById('p-link').value = p.link || '';
     }
+  } else {
+    ['p-name','p-location','p-desc','p-lat','p-lng','p-tags','p-link'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('p-cat').value = 'heal';
+  }
+  document.getElementById('place-modal').classList.add('open');
+}
+
+function closePlaceModal() {
+  document.getElementById('place-modal').classList.remove('open');
+}
+
+function closePlaceModalOverlay(e) {
+  if (e.target === document.getElementById('place-modal')) closePlaceModal();
+}
+
+function savePlaceItem() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { toast('장소명을 입력해 주세요', 'warn'); return; }
+
+  const item = {
+    name,
+    location: document.getElementById('p-location').value.trim(),
+    cat: document.getElementById('p-cat').value,
+    desc: document.getElementById('p-desc').value.trim(),
+    lat: document.getElementById('p-lat').value.trim(),
+    lng: document.getElementById('p-lng').value.trim(),
+    tags: document.getElementById('p-tags').value.trim(),
+    link: document.getElementById('p-link').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const places = getPlaces();
+  const editId = document.getElementById('place-edit-id').value;
+
+  if (editId !== '') {
+    places[parseInt(editId)] = item;
+    addLog('place', '장소 수정: ' + name);
+    toast('✅ ' + name + ' 수정됐어요');
+  } else {
+    places.push(item);
+    addLog('place', '장소 추가: ' + name);
+    toast('✅ ' + name + ' 추가됐어요');
   }
 
-  function superLock() {
-    document.getElementById('super-lock').style.display = 'flex';
-    document.getElementById('super-content').classList.remove('unlocked');
+  savePlaces(places);
+  renderPlaces();
+  closePlaceModal();
+}
+
+function editPlace(idx) {
+  openPlaceModal(String(idx));
+}
+
+function deletePlace(idx) {
+  const places = getPlaces();
+  const name = places[idx]?.name || '';
+  if (!confirm(`"${name}" 장소를 삭제할까요?`)) return;
+  places.splice(idx, 1);
+  savePlaces(places);
+  renderPlaces();
+  addLog('place', '장소 삭제: ' + name);
+  toast(name + ' 삭제됐어요', 'warn');
+}
+
+// ═══════════════════════════════════════════
+// 샘플 데이터 (안성 창조관광)
+// ═══════════════════════════════════════════
+function loadSamplePlaces() {
+  const sample = [
+    { name: '미리내마을 성지순례길', location: '경기 안성시 양성면', cat: 'heal', desc: '성지와 호수, 마을길을 따라 걷는 마음성찰 여행. 고요한 풍경 속에서 나를 돌아보는 시간.', lat: '36.9842', lng: '127.2510', tags: '마음성찰, 산책, 고요함, 자연', link: '' },
+    { name: '선비마을 고택피크닉', location: '경기 안성시 금광면', cat: 'color', desc: '유생복을 입고 고택에서 피크닉을 즐기는 감성 여행. 전통문화와 한옥 풍경이 어우러져요.', lat: '37.0214', lng: '127.2880', tags: '고택, 전통, 피크닉, 한옥', link: '' },
+    { name: '용설호마을 맛깔식탁', location: '경기 안성시 보개면', cat: 'taste', desc: '호수가 아름다운 용설호마을에서 낚시 체험과 로컬 식탁을 즐기는 하루.', lat: '37.0088', lng: '127.3120', tags: '낚시, 로컬푸드, 호수, 먹거리', link: '' },
+    { name: '신기팜마을 힐링휴게소', location: '경기 안성시 서운면', cat: 'heal', desc: '블루베리와 함께 쉬어가는 감각형 힐링. 퍼플 디저트와 포토존이 어우러진 농촌 힐링.', lat: '37.0441', lng: '127.1980', tags: '블루베리, 농촌, 디저트, 포토존', link: '' },
+    { name: '청룡사거리 옛빛산책', location: '경기 안성시 죽산면', cat: 'color', desc: '청룡사와 이해룡 고가, 성황당을 따라 걷는 역사문화 산책. 오래된 이야기를 만납니다.', lat: '37.0632', lng: '127.4210', tags: '역사, 사찰, 문화재, 산책', link: '' },
+    { name: '풍산개마을 끼깔운동회', location: '경기 안성시 고삼면', cat: 'exp', desc: '함께 뛰고 웃으며 즐기는 단체형 농촌운동회. 보리수 먹거리와 팀별 미션이 결합된 특별한 하루.', lat: '37.0318', lng: '127.2650', tags: '단체, 운동회, 체험, 활력', link: '' }
+  ];
+
+  const existing = getPlaces();
+  const merged = [...existing, ...sample.filter(s => !existing.find(e => e.name === s.name))];
+  savePlaces(merged);
+  renderPlaces();
+  addLog('place', '샘플 장소 ' + sample.length + '개 불러옴');
+  toast('✅ 샘플 힐링포인트 6개가 추가됐어요');
+}
+
+// ═══════════════════════════════════════════
+// 캐릭터 프롬프트 모달
+// ═══════════════════════════════════════════
+let currentChar = '';
+
+function openCharModal(which) {
+  currentChar = which;
+  const isBlue = which === 'blue';
+  document.getElementById('char-modal-title').textContent = isBlue ? '🟣 스펀지 블루 프롬프트' : '🟡 스펀지 골드 프롬프트';
+  const stored = localStorage.getItem('sponge_prompt_' + which);
+  document.getElementById('prompt-textarea').value = stored || (isBlue ? DEFAULT_BLUE : DEFAULT_GOLD);
+  document.getElementById('char-modal').classList.add('open');
+}
+
+function closeCharModal() { document.getElementById('char-modal').classList.remove('open'); }
+function closeCharModalOverlay(e) { if (e.target === document.getElementById('char-modal')) closeCharModal(); }
+
+function saveCharPrompt() {
+  const val = document.getElementById('prompt-textarea').value.trim();
+  if (!val) { toast('프롬프트가 비어 있어요', 'warn'); return; }
+  localStorage.setItem('sponge_prompt_' + currentChar, val);
+  addLog(currentChar === 'blue' ? 'blue' : 'gold', (currentChar === 'blue' ? '블루' : '골드') + ' 프롬프트 저장됨');
+  toast('✅ 프롬프트가 저장됐어요');
+  closeCharModal();
+}
+
+function resetPrompt(which) {
+  localStorage.removeItem('sponge_prompt_' + which);
+  toast((which === 'blue' ? '🟣 블루' : '🟡 골드') + ' 프롬프트가 기본값으로 돌아갔어요', 'warn');
+}
+
+// ═══════════════════════════════════════════
+// API 설정
+// ═══════════════════════════════════════════
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { toast('API 키를 입력해 주세요', 'warn'); return; }
+  localStorage.setItem('sponge_api_key', key);
+  updateApiStatus(key);
+  addLog('sys', 'API 키 저장됨');
+  toast('✅ API 키가 저장됐어요');
+}
+
+function clearApiKey() {
+  localStorage.removeItem('sponge_api_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-key-status').className = 'status-badge warn';
+  document.getElementById('api-key-status').textContent = '⚠️ 미설정';
+  toast('API 키가 삭제됐어요', 'warn');
+}
+
+function toggleApiVis() {
+  const input = document.getElementById('api-key-input');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function testApiKey() {
+  const key = document.getElementById('api-key-input').value.trim() || localStorage.getItem('sponge_api_key');
+  if (!key || key === 'YOUR_OPENAI_API_KEY') { toast('API 키를 먼저 입력하세요', 'warn'); return; }
+  toast('🔍 테스트 중...', 'warn');
+  try {
+    const res = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${key}` } });
+    if (res.ok) { toast('✅ 연결 성공!'); addLog('sys', 'API 연결 테스트 성공'); }
+    else { toast('❌ API 오류 ' + res.status, 'err'); }
+  } catch { toast('❌ 네트워크 오류', 'err'); }
+}
+
+function updateApiStatus(key) {
+  const el = document.getElementById('api-key-status');
+  const conn = document.getElementById('conn-api');
+  if (key && key !== 'YOUR_OPENAI_API_KEY') {
+    el.className = 'status-badge ok';
+    el.textContent = '✅ 설정됨 (…' + key.slice(-4) + ')';
+    conn.className = 'status-badge ok';
+    conn.textContent = '✅ API 연결됨';
+  } else {
+    el.className = 'status-badge warn';
+    el.textContent = '⚠️ 미설정';
+    conn.className = 'status-badge err';
+    conn.textContent = '❌ API 키 없음';
+  }
+}
+
+function saveModelSettings() {
+  localStorage.setItem('sponge_model', document.getElementById('model-select').value);
+  localStorage.setItem('sponge_max_tokens', document.getElementById('max-tokens-input').value);
+  localStorage.setItem('sponge_temperature', document.getElementById('temperature-input').value);
+  toast('✅ 모델 설정 저장됐어요');
+}
+
+// ═══════════════════════════════════════════
+// 콘텐츠 설정
+// ═══════════════════════════════════════════
+function updateIntroPreview() {
+  const val = document.getElementById('intro-text-input').value;
+  document.getElementById('intro-preview').textContent = val || '준비되셨나요, 터치해 주세요';
+}
+
+function saveContentSettings() {
+  const introText = document.getElementById('intro-text-input').value.trim();
+  const greetingText = document.getElementById('greeting-text-input').value.trim();
+  if (introText) localStorage.setItem('sponge_intro_text', introText);
+  else localStorage.removeItem('sponge_intro_text');
+  if (greetingText) localStorage.setItem('sponge_greeting_text', greetingText);
+  else localStorage.removeItem('sponge_greeting_text');
+  addLog('sys', '콘텐츠 설정 저장됨');
+  toast('✅ 콘텐츠 설정이 저장됐어요');
+}
+
+function resetIntroText() {
+  localStorage.removeItem('sponge_intro_text');
+  document.getElementById('intro-text-input').value = '';
+  updateIntroPreview();
+  toast('기본값으로 돌아갔어요', 'warn');
+}
+
+function clearGreeting() {
+  localStorage.removeItem('sponge_greeting_text');
+  document.getElementById('greeting-text-input').value = '';
+  toast('랜덤 모드로 돌아갔어요', 'warn');
+}
+
+// ═══════════════════════════════════════════
+// 운영 설정
+// ═══════════════════════════════════════════
+function saveLimitSettings() {
+  const val = parseInt(document.getElementById('daily-limit-input').value || '0');
+  localStorage.setItem('sponge_daily_limit', val);
+  addLog('sys', '일일 한도: ' + (val || '무제한'));
+  toast('✅ 저장됐어요 (한도: ' + (val || '무제한') + ')');
+  initDashboard();
+}
+
+function confirmReset() {
+  if (confirm('⚠️ 모든 스펀지맵 설정과 장소 DB를 초기화할까요?')) {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sponge_')) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+    addLog('sys', '전체 초기화');
+    toast('초기화됐어요', 'warn');
+    init();
+  }
+}
+
+// ═══════════════════════════════════════════
+// 대시보드
+// ═══════════════════════════════════════════
+function getTodayKey() { return 'sponge_count_' + new Date().toISOString().slice(0,10); }
+function getDailyCount() { return parseInt(localStorage.getItem(getTodayKey()) || '0'); }
+
+function getTotalCount() {
+  let t = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sponge_count_')) t += parseInt(localStorage.getItem(k) || '0');
+  }
+  return t;
+}
+
+function initDashboard() {
+  const today = new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  document.getElementById('header-date').textContent = today;
+
+  const cnt   = getDailyCount();
+  const limit = parseInt(localStorage.getItem('sponge_daily_limit') || '0');
+  document.getElementById('stat-today').textContent = cnt;
+  document.getElementById('stat-limit').textContent = limit || '∞';
+  document.getElementById('stat-total').textContent = getTotalCount();
+
+  const key = localStorage.getItem('sponge_api_key') || '';
+  updateApiStatus(key);
+
+  const places = getPlaces();
+  document.getElementById('stat-places').textContent = places.length;
+  if (places.length > 0) {
+    document.getElementById('conn-places').className = 'status-badge ok';
+    document.getElementById('conn-places').textContent = '📍 장소 ' + places.length + '개';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 저장소 정보
+// ═══════════════════════════════════════════
+function initStorageInfo() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sponge_')) keys.push(k);
+  }
+  document.getElementById('storage-info').innerHTML = keys.map(k => {
+    const v = localStorage.getItem(k) || '';
+    const short = v.length > 60 ? v.slice(0, 57) + '…' : v;
+    return `<b>${k}</b>: ${short}`;
+  }).join('<br>') || '(저장된 설정 없음)';
+}
+
+// ═══════════════════════════════════════════
+// 내보내기 / 가져오기
+// ═══════════════════════════════════════════
+function exportSettings() {
+  const obj = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sponge_')) obj[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spongemap-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ 설정 파일 다운로드됐어요');
+}
+
+function importSettings(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const obj = JSON.parse(ev.target.result);
+      let count = 0;
+      Object.entries(obj).forEach(([k, v]) => { if (k.startsWith('sponge_')) { localStorage.setItem(k, v); count++; } });
+      toast('✅ ' + count + '개 설정을 가져왔어요');
+      init();
+    } catch { toast('❌ 파일 형식 오류', 'err'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetTodayCount() {
+  localStorage.removeItem(getTodayKey());
+  toast('오늘 사용량 초기화됐어요', 'warn');
+  initDashboard();
+}
+
+// ═══════════════════════════════════════════
+// 토스트 / 로그
+// ═══════════════════════════════════════════
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'ok' ? 'rgba(52,211,153,0.97)' : type === 'err' ? 'rgba(248,113,113,0.97)' : 'rgba(251,191,36,0.97)';
+  el.style.color = type === 'ok' ? '#0b2e20' : '#fff';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function addLog(type, text) {
+  const list = document.getElementById('activity-log');
+  if (list.children.length === 1 && list.children[0].querySelector('.log-time')?.textContent === '—') {
+    list.innerHTML = '';
+  }
+  const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  const item = document.createElement('li');
+  item.className = 'log-item';
+  item.innerHTML = `<span class="log-dot ${type}"></span><span class="log-time">${now}</span><span class="log-text">${text}</span>`;
+  list.insertBefore(item, list.firstChild);
+  if (list.children.length > 10) list.removeChild(list.lastChild);
+}
+
+// ═══════════════════════════════════════════
+// UI 문구 추가 저장 함수
+// ═══════════════════════════════════════════
+function saveSelectSettings() {
+  const subtitle = document.getElementById('select-subtitle-input').value.trim();
+  const startBtn = document.getElementById('start-btn-input').value.trim();
+  if (subtitle) localStorage.setItem('sponge_select_subtitle', subtitle);
+  if (startBtn) localStorage.setItem('sponge_start_btn', startBtn);
+  addLog('sys', 'UI 문구 저장: 선택화면');
+  toast('✅ 선택화면 문구 저장됨');
+}
+
+function savePlaceholder() {
+  const val = document.getElementById('placeholder-input').value.trim();
+  if (val) localStorage.setItem('sponge_chat_placeholder', val);
+  addLog('sys', '입력창 플레이스홀더 저장');
+  toast('✅ 저장됐어요');
+}
+
+// ═══════════════════════════════════════════
+// 슈퍼관리자 시스템
+// ═══════════════════════════════════════════
+const SUPER_PW_KEY = 'sponge_super_pw';
+const DEFAULT_SUPER_PW = 'sponge2024!';
+
+function superLogin() {
+  const entered = document.getElementById('super-pw-input').value;
+  const stored  = localStorage.getItem(SUPER_PW_KEY) || DEFAULT_SUPER_PW;
+  if (entered === stored) {
+    document.getElementById('super-lock').style.display  = 'none';
+    document.getElementById('super-panel').style.display = 'block';
+    initSuperPanel();
+  } else {
     document.getElementById('super-pw-input').value = '';
+    document.getElementById('super-pw-input').placeholder = '❌ 비밀번호가 틀렸어요';
+    setTimeout(() => { document.getElementById('super-pw-input').placeholder = '마스터 비밀번호'; }, 2000);
+  }
+}
+
+function superLogout() {
+  document.getElementById('super-lock').style.display  = 'block';
+  document.getElementById('super-panel').style.display = 'none';
+  document.getElementById('super-pw-input').value = '';
+}
+
+function initSuperPanel() {
+  // 프롬프트 로드
+  const savedPrompt = localStorage.getItem('sponge_super_prompt') || '';
+  document.getElementById('super-prompt-input').value = savedPrompt;
+  const promptStatus = document.getElementById('super-prompt-status');
+  if (savedPrompt) {
+    promptStatus.className = 'status-badge ok';
+    promptStatus.textContent = `✅ ${savedPrompt.length}자 설정됨`;
+  } else {
+    promptStatus.className = 'status-badge warn';
+    promptStatus.textContent = '⚠️ 미설정 — Custom GPT 지시문을 입력해 주세요';
   }
 
-  function loadSuperContent() {
-    // API 키 (마스킹 표시)
-    const savedKey = localStorage.getItem('sponge_api_key') || '';
-    document.getElementById('api-key-input').value = savedKey;
+  // 칩 로드
+  try {
+    const chips = JSON.parse(localStorage.getItem('sponge_chips') || '[]');
+    document.getElementById('chips-input').value = chips.join('\n');
+    document.getElementById('chips-count').textContent = `현재 ${chips.length}개 칩 등록됨`;
+  } catch {}
+}
 
-    // 일일 제한
-    const limit = localStorage.getItem('sponge_daily_limit') || '0';
-    document.getElementById('daily-limit').value = limit;
-    document.getElementById('stat-limit').textContent = limit === '0' ? '무제한' : limit + ' 회';
+function saveSuperPrompt() {
+  const val = document.getElementById('super-prompt-input').value.trim();
+  if (!val) { toast('내용을 입력해 주세요', 'warn'); return; }
+  localStorage.setItem('sponge_super_prompt', val);
+  const promptStatus = document.getElementById('super-prompt-status');
+  promptStatus.className = 'status-badge ok';
+  promptStatus.textContent = `✅ ${val.length}자 저장됨`;
+  addLog('sys', `슈퍼프롬프트 저장 (${val.length}자)`);
+  toast('✅ Custom GPT 시스템 프롬프트 저장됐어요');
+}
 
-    // 오늘 사용량
-    const today = new Date().toISOString().slice(0,10);
-    const count = parseInt(localStorage.getItem('sponge_count_' + today) || '0');
-    document.getElementById('stat-today').textContent = count + ' 회';
+function clearSuperPrompt() {
+  if (!confirm('슈퍼 프롬프트를 삭제할까요?')) return;
+  localStorage.removeItem('sponge_super_prompt');
+  document.getElementById('super-prompt-input').value = '';
+  const promptStatus = document.getElementById('super-prompt-status');
+  promptStatus.className = 'status-badge warn';
+  promptStatus.textContent = '⚠️ 미설정';
+  toast('프롬프트 삭제됨', 'warn');
+}
 
-    // 프롬프트
-    document.getElementById('prompt-blue').value =
-      localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE;
-    document.getElementById('prompt-gold').value =
-      localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD;
-  }
+function saveChips() {
+  const raw = document.getElementById('chips-input').value.trim();
+  const chips = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (chips.length === 0) { toast('칩 내용을 입력해 주세요', 'warn'); return; }
+  localStorage.setItem('sponge_chips', JSON.stringify(chips));
+  document.getElementById('chips-count').textContent = `✅ ${chips.length}개 칩 저장됨`;
+  addLog('sys', `대화 칩 ${chips.length}개 저장`);
+  toast(`✅ ${chips.length}개 칩 저장됐어요`);
+}
 
-  function saveApiKey() {
-    const val = document.getElementById('api-key-input').value.trim();
-    if (!val.startsWith('sk-')) { alert('올바른 OpenAI API 키를 입력해 주세요 (sk- 로 시작)'); return; }
-    localStorage.setItem('sponge_api_key', val);
-    showToast('API 키가 저장됐어요 🔑');
-  }
+function resetChips() {
+  localStorage.removeItem('sponge_chips');
+  document.getElementById('chips-input').value = '';
+  document.getElementById('chips-count').textContent = '기본 풀로 초기화됨';
+  toast('칩 초기화됨 (기본값 사용)', 'warn');
+}
 
-  function clearApiKey() {
-    if (!confirm('API 키를 삭제할까요?')) return;
-    localStorage.removeItem('sponge_api_key');
-    document.getElementById('api-key-input').value = '';
-    showToast('API 키가 삭제됐어요');
-  }
+function extractChipsFromPrompt() {
+  const prompt = document.getElementById('super-prompt-input').value;
+  if (!prompt.trim()) { toast('먼저 시스템 프롬프트를 입력하세요', 'warn'); return; }
+  // 간단한 키워드 추출: 문장 마침표·줄바꿈 기준으로 감정 표현 추출
+  const defaultChips = [
+    '요즘 자꾸 지쳐요','아무것도 하기 싫어요','혼자 있고 싶어요',
+    '기분 전환이 필요해요','스트레스가 너무 많아요','누군가가 그리워요',
+    '새로운 자극이 필요해요','무기력한 기분이에요','불안한 마음이 있어요',
+    '복잡한 생각이 많아요','설레는 기분이에요','자연 속에 있고 싶어요',
+    '뭔가 변화가 필요해요','활력이 떨어졌어요','나를 돌보고 싶어요',
+    '화가 나 있어요','외로운 것 같아요','쉬고 싶은데 쉬어지지 않아요'
+  ];
+  document.getElementById('chips-input').value = defaultChips.join('\n');
+  document.getElementById('chips-count').textContent = `📋 ${defaultChips.length}개 기본 칩 불러옴 — 수정 후 저장하세요`;
+  toast('기본 칩 목록 불러옴 — 확인 후 저장해 주세요', 'warn');
+}
 
-  function saveLimit() {
-    const val = document.getElementById('daily-limit').value || '0';
-    localStorage.setItem('sponge_daily_limit', val);
-    document.getElementById('stat-limit').textContent = val === '0' ? '무제한' : val + ' 회';
-    showToast('사용량 제한이 저장됐어요 ⚡');
-  }
+function changeSuperPw() {
+  const newPw  = document.getElementById('new-pw-input').value;
+  const confirm2 = document.getElementById('new-pw-confirm').value;
+  if (!newPw) { toast('새 비밀번호를 입력해 주세요', 'warn'); return; }
+  if (newPw !== confirm2) { toast('비밀번호가 일치하지 않아요', 'err'); return; }
+  localStorage.setItem(SUPER_PW_KEY, newPw);
+  document.getElementById('new-pw-input').value = '';
+  document.getElementById('new-pw-confirm').value = '';
+  toast('✅ 비밀번호가 변경됐어요');
+}
 
-  function resetDailyCount() {
-    if (!confirm('오늘의 사용 카운트를 0으로 초기화할까요?')) return;
-    const today = new Date().toISOString().slice(0,10);
-    localStorage.removeItem('sponge_count_' + today);
-    document.getElementById('stat-today').textContent = '0 회';
-    showToast('카운트를 초기화했어요');
-  }
+function saveRiskKeywords() {
+  const val = document.getElementById('risk-keywords-input').value.trim();
+  if (val) localStorage.setItem('sponge_extra_risk_keywords', val);
+  toast('✅ 위험 키워드 저장됨');
+}
 
-  function switchPromptTab(tab, el) {
-    document.querySelectorAll('.prompt-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('prompt-blue').style.display = tab === 'blue' ? 'block' : 'none';
-    document.getElementById('prompt-gold').style.display = tab === 'gold' ? 'block' : 'none';
-  }
+// ═══════════════════════════════════════════
+// 탭 전환
+// ═══════════════════════════════════════════
+function switchTab(name) {
+  const tabNames = ['dashboard', 'places', 'chars', 'api', 'content', 'limits', 'super'];
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabNames[i] === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name)?.classList.add('active');
+  if (name === 'limits') initStorageInfo();
+}
 
-  function savePrompts() {
-    localStorage.setItem('sponge_prompt_blue', document.getElementById('prompt-blue').value.trim());
-    localStorage.setItem('sponge_prompt_gold', document.getElementById('prompt-gold').value.trim());
-    showToast('프롬프트가 저장됐어요 🤖');
-  }
+// ═══════════════════════════════════════════
+// 초기화
+// ═══════════════════════════════════════════
+function init() {
+  initDashboard();
+  renderPlaces();
 
-  function resetPrompts() {
-    if (!confirm('기본 프롬프트로 되돌릴까요?')) return;
-    localStorage.removeItem('sponge_prompt_blue');
-    localStorage.removeItem('sponge_prompt_gold');
-    document.getElementById('prompt-blue').value = DEFAULT_PROMPT_BLUE;
-    document.getElementById('prompt-gold').value = DEFAULT_PROMPT_GOLD;
-    showToast('기본 프롬프트로 되돌렸어요');
-  }
+  // API 탭 값
+  const key = localStorage.getItem('sponge_api_key') || '';
+  document.getElementById('api-key-input').value = key && key !== 'YOUR_OPENAI_API_KEY' ? key : '';
+  document.getElementById('model-select').value = localStorage.getItem('sponge_model') || 'gpt-4o-mini';
+  document.getElementById('max-tokens-input').value = localStorage.getItem('sponge_max_tokens') || '300';
+  document.getElementById('temperature-input').value = localStorage.getItem('sponge_temperature') || '0.8';
 
-  function changePassword() {
-    const newPw = document.getElementById('new-pw').value.trim();
-    if (newPw.length < 4) { alert('비밀번호는 4자 이상이어야 해요'); return; }
-    localStorage.setItem(SUPER_PW_KEY, newPw);
-    document.getElementById('new-pw').value = '';
-    showToast('비밀번호가 변경됐어요 🔒');
-  }
+  // UI문구 탭 값
+  document.getElementById('intro-text-input').value = localStorage.getItem('sponge_intro_text') || '';
+  document.getElementById('greeting-text-input').value = localStorage.getItem('sponge_greeting_text') || '';
+  document.getElementById('select-subtitle-input').value = localStorage.getItem('sponge_select_subtitle') || '';
+  document.getElementById('start-btn-input').value = localStorage.getItem('sponge_start_btn') || '';
+  document.getElementById('placeholder-input').value = localStorage.getItem('sponge_chat_placeholder') || '';
+  document.getElementById('daily-limit-input').value = localStorage.getItem('sponge_daily_limit') || '0';
+  updateIntroPreview();
+}
+
+window.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>
