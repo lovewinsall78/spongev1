@@ -1622,13 +1622,13 @@ async function sendMessage() {
           'Authorization': `Bearer ${currentApiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: localStorage.getItem('sponge_model') || 'gpt-3.5-turbo',
           messages: [
             { role: 'system', content: getFullSystemPrompt() + getStagePromptAddition() },
             ...chatHistory
           ],
-          max_tokens: 200,
-          temperature: 0.8
+          max_tokens: parseInt(localStorage.getItem('sponge_max_tokens') || '200'),
+          temperature: parseFloat(localStorage.getItem('sponge_temperature') || '0.8')
         })
       });
 

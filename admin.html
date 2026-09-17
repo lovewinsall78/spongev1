@@ -689,9 +689,9 @@
     <div class="field">
       <label>사용 모델</label>
       <select id="model-select">
-        <option value="gpt-4o-mini">gpt-4o-mini (권장 · 저비용)</option>
+        <option value="gpt-3.5-turbo">gpt-3.5-turbo (기본 · 안정적)</option>
+        <option value="gpt-4o-mini">gpt-4o-mini (저비용 · 프로젝트 권한 필요)</option>
         <option value="gpt-4o">gpt-4o (고품질 · 비용 높음)</option>
-        <option value="gpt-3.5-turbo">gpt-3.5-turbo (구모델)</option>
       </select>
     </div>
     <div class="row-2">
@@ -1760,7 +1760,7 @@ function init() {
   // API 탭 값
   const key = localStorage.getItem('sponge_api_key') || '';
   document.getElementById('api-key-input').value = key && key !== 'YOUR_OPENAI_API_KEY' ? key : '';
-  document.getElementById('model-select').value = localStorage.getItem('sponge_model') || 'gpt-4o-mini';
+  document.getElementById('model-select').value = localStorage.getItem('sponge_model') || 'gpt-3.5-turbo';
   document.getElementById('max-tokens-input').value = localStorage.getItem('sponge_max_tokens') || '300';
   document.getElementById('temperature-input').value = localStorage.getItem('sponge_temperature') || '0.8';
 
