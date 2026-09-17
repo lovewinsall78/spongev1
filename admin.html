@@ -537,6 +537,7 @@
   <button class="tab" onclick="switchTab('api')">🔑 API</button>
   <button class="tab" onclick="switchTab('content')">✏️ UI문구</button>
   <button class="tab" onclick="switchTab('limits')">🚦 운영</button>
+  <button class="tab" onclick="switchTab('journey')">📋 대화단계</button>
   <button class="tab" onclick="switchTab('super')" style="color:#fbbf24;">🔐 슈퍼관리자</button>
 </div>
 
@@ -616,9 +617,9 @@
   <div class="section">
     <div class="section-title">📦 샘플 데이터 <span class="badge-pill">안성 창조관광</span></div>
     <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:12px;">
-      스펀지맵 아티팩트의 안성 힐링포인트 6개를 불러와요.
+      안성 크리에이 투어 힐링포인트 30개를 한 번에 불러와요.
     </p>
-    <button class="btn btn-ghost btn-full" onclick="loadSamplePlaces()">샘플 6개 불러오기</button>
+    <button class="btn btn-ghost btn-full" onclick="loadSamplePlaces()">안성 30개 장소 불러오기</button>
   </div>
 
   <div class="section">
@@ -767,7 +768,53 @@
   </div>
 </div>
 
-<!-- ══ TAB 7: 슈퍼관리자 ══ -->
+<!-- ══ TAB 7: 대화 단계 설정 ══ -->
+<div class="tab-content" id="tab-journey">
+
+  <div class="section">
+    <div class="section-title">📋 대화 단계 수 설정</div>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:14px;">
+      감정여행 대화를 몇 단계로 진행할지 설정하세요 (최소 3 / 최대 10).<br>
+      마지막 단계에서 <strong>여행카드</strong>가 자동 출력됩니다.
+    </p>
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <label style="font-size:13px; color:var(--text2);">단계 수</label>
+      <input type="range" id="stage-count-range" min="3" max="10" value="7"
+        oninput="document.getElementById('stage-count-display').textContent=this.value; renderStageEditor();"
+        style="flex:1; accent-color:var(--primary);">
+      <span id="stage-count-display" style="font-size:16px; font-weight:900; color:var(--primary-light); min-width:28px; text-align:right;">7</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎯 각 단계 이름 · AI 지시문</div>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:14px;">
+      단계별로 AI가 어떻게 대화를 이끌지 지시문을 입력하세요.<br>
+      마지막 단계 지시문은 <strong>장소 추천 결론</strong>을 이끌도록 작성하세요.
+    </p>
+    <div id="stage-editor-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn btn-accent" style="flex:1;" onclick="saveStages()">💾 단계 저장</button>
+      <button class="btn btn-ghost" onclick="resetStages()">기본값 복원</button>
+    </div>
+    <p class="hint" style="margin-top:8px;">저장 즉시 대화에 반영됩니다.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🗺️ 4개 시작 카드 미리보기</div>
+    <p style="font-size:12px; color:var(--text2); margin-bottom:12px;">
+      대화 시작 시 사용자에게 보여지는 진입 카드예요.
+    </p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div style="padding:12px; border:1.5px solid rgba(108,99,255,0.3); border-radius:12px; font-size:13px;">🎯 안성, 어디에 있나요?</div>
+      <div style="padding:12px; border:1.5px solid rgba(108,99,255,0.3); border-radius:12px; font-size:13px;">💛 마음을 색으로 말해본다면?</div>
+      <div style="padding:12px; border:1.5px solid rgba(108,99,255,0.3); border-radius:12px; font-size:13px;">👁️ 지금 이 순간, 누구랑 있어요?</div>
+      <div style="padding:12px; border:1.5px solid rgba(108,99,255,0.3); border-radius:12px; font-size:13px;">🌿 이 마음과 어울리는 펜션은</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 8: 슈퍼관리자 ══ -->
 <div class="tab-content" id="tab-super">
 
   <!-- 잠금 화면 -->
@@ -1584,11 +1631,123 @@ function saveRiskKeywords() {
 // 탭 전환
 // ═══════════════════════════════════════════
 function switchTab(name) {
-  const tabNames = ['dashboard', 'places', 'chars', 'api', 'content', 'limits', 'super'];
+  const tabNames = ['dashboard', 'places', 'chars', 'api', 'content', 'limits', 'journey', 'super'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabNames[i] === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name)?.classList.add('active');
-  if (name === 'limits') initStorageInfo();
+  if (name === 'limits')   initStorageInfo();
+  if (name === 'journey')  initJourneyTab();
+}
+
+// ═══════════════════════════════════════════
+// 대화 단계 설정
+// ═══════════════════════════════════════════
+const DEFAULT_STAGES_ADMIN = [
+  { name: '감정 자각',  prompt: '사용자의 현재 감정 상태를 파악하고 공감하세요. 감정 단어를 반드시 반영해 짧게 응답하세요.' },
+  { name: '감정 색채',  prompt: '감정을 색 또는 자연 이미지로 표현하도록 유도하세요. "어떤 색이 지금 마음에 가깝나요?" 형식으로.' },
+  { name: '동반자',     prompt: '지금 혼자인지, 누군가와 함께인지 자연스럽게 파악하세요.' },
+  { name: '욕구 탐색',  prompt: '이 여행에서 무엇을 원하는지 탐색하세요. 쉬고 싶은지, 자극이 필요한지, 감동을 원하는지.' },
+  { name: '공간 연결',  prompt: '어떤 분위기의 공간이 끌리는지 물어보세요. 조용한 숲? 탁 트인 들판? 아늑한 카페?' },
+  { name: '자기성찰',   prompt: '이 여행이 나에게 주는 의미를 한 문장으로 정리하도록 돕세요.' },
+  { name: '장소 추천',  prompt: '지금까지 대화를 바탕으로 안성 힐링포인트 중 가장 맞는 곳을 추천하세요. 장소명·추천 이유·감정 연결고리를 포함하세요.' },
+];
+
+function initJourneyTab() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('sponge_stages') || 'null');
+    const stages = saved || DEFAULT_STAGES_ADMIN;
+    const range = document.getElementById('stage-count-range');
+    const disp  = document.getElementById('stage-count-display');
+    if (range) { range.value = stages.length; disp.textContent = stages.length; }
+    renderStageEditor(stages);
+  } catch(e) {}
+}
+
+function renderStageEditor(stages) {
+  const count = parseInt(document.getElementById('stage-count-range')?.value || 7);
+  let current;
+  try { current = JSON.parse(localStorage.getItem('sponge_stages') || 'null') || DEFAULT_STAGES_ADMIN; } catch(e) { current = DEFAULT_STAGES_ADMIN; }
+  if (stages && Array.isArray(stages)) current = stages;
+
+  const wrap = document.getElementById('stage-editor-wrap');
+  if (!wrap) return;
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const stg = current[i] || { name: `${i+1}단계`, prompt: '' };
+    const isLast = i === count - 1;
+    html += `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--primary-light); background:rgba(108,99,255,0.15); padding:2px 8px; border-radius:8px;">${i+1}단계${isLast ? ' · 결론' : ''}</span>
+          <input type="text" id="stage-name-${i}" value="${stg.name}" placeholder="단계 이름"
+            style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; padding:5px 10px;">
+        </div>
+        <textarea id="stage-prompt-${i}" rows="3" placeholder="이 단계에서 AI에게 줄 지시문"
+          style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; padding:8px 10px; resize:vertical; line-height:1.5;">${stg.prompt}</textarea>
+      </div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function saveStages() {
+  const count = parseInt(document.getElementById('stage-count-range')?.value || 7);
+  const stages = [];
+  for (let i = 0; i < count; i++) {
+    stages.push({
+      name:   document.getElementById(`stage-name-${i}`)?.value.trim() || `${i+1}단계`,
+      prompt: document.getElementById(`stage-prompt-${i}`)?.value.trim() || '',
+    });
+  }
+  localStorage.setItem('sponge_stages', JSON.stringify(stages));
+  toast('✅ 단계 설정 저장됨');
+}
+
+function resetStages() {
+  localStorage.removeItem('sponge_stages');
+  initJourneyTab();
+  toast('🔄 기본값으로 복원됨');
+}
+
+// ═══════════════════════════════════════════
+// 안성 30개 샘플 장소 로드 (대체)
+// ═══════════════════════════════════════════
+function loadSamplePlaces() {
+  const anseong30 = [
+    { name:'안성팜랜드', category:'체험', tags:'자연,가족,활력,넓은공간', desc:'드넓은 초원과 동물 체험이 가득한 힐링 목장', address:'경기도 안성시 공도읍 대신두길 28', emoji:'🐄', lat:37.04, lng:127.30 },
+    { name:'서운산 자연휴양림', category:'숲', tags:'숲,치유,고요,혼자,자연회복', desc:'짙은 소나무 숲 속 조용한 산림욕 힐링 공간', address:'경기도 안성시 서운면 청룡길', emoji:'🌲', lat:37.00, lng:127.24 },
+    { name:'안성천 둑길', category:'산책', tags:'산책,고요,사색,혼자,물', desc:'봄·가을 꽃길과 함께 걷기 좋은 천변 산책로', address:'경기도 안성시 안성천 일원', emoji:'🌸', lat:37.01, lng:127.27 },
+    { name:'죽주산성', category:'역사', tags:'역사,자연,호기심,탐험', desc:'천 년 세월을 품은 돌담 위에서 바라보는 안성 전경', address:'경기도 안성시 죽산면 죽산리', emoji:'🏯', lat:37.07, lng:127.42 },
+    { name:'미리내성지', category:'문화', tags:'성찰,고요,종교,감동,혼자', desc:'한국 천주교 최초 순교자의 성지 — 고요한 숲길 묵상 코스', address:'경기도 안성시 양성면 미산리 7', emoji:'⛪', lat:37.05, lng:127.15 },
+    { name:'안성맞춤랜드', category:'문화', tags:'문화,가족,활력,야외', desc:'안성 전통 유기·남사당 놀이패를 만나는 축제형 공간', address:'경기도 안성시 보개면 남사당로 198', emoji:'🎭', lat:37.01, lng:127.28 },
+    { name:'칠장사', category:'사찰', tags:'사찰,고요,자기성찰,치유', desc:'천년 고찰의 적막 속 마음을 비우는 템플스테이 공간', address:'경기도 안성시 일죽면 칠장리', emoji:'🕌', lat:37.09, lng:127.45 },
+    { name:'청룡사', category:'사찰', tags:'사찰,숲,치유,고요', desc:'서운산 자락의 아늑한 고찰 — 단풍길이 특히 아름다운 곳', address:'경기도 안성시 서운면 청룡길 140', emoji:'🍁', lat:37.00, lng:127.24 },
+    { name:'안성 유기박물관', category:'박물관', tags:'문화,역사,호기심,실내', desc:'안성맞춤 유기 장인의 손길을 직접 체험하는 공예 박물관', address:'경기도 안성시 대덕면 서동대로', emoji:'🏺', lat:37.02, lng:127.25 },
+    { name:'고삼저수지', category:'수변', tags:'수변,낚시,고요,사색,자연', desc:'낚시꾼들의 성지, 조용한 물안개 속 힐링 포인트', address:'경기도 안성시 고삼면 고삼리', emoji:'🎣', lat:37.06, lng:127.36 },
+    { name:'비봉산 전망대', category:'등산', tags:'전망,활력,도전,하이킹', desc:'안성 전체가 한눈에 — 야경도 빼어난 숨겨진 뷰포인트', emoji:'⛰️', address:'경기도 안성시 비봉면', lat:37.03, lng:127.21 },
+    { name:'안성 포도밭 농장', category:'체험', tags:'체험,가족,수확,활력,설렘', desc:'9월 포도 수확 계절, 직접 따고 맛보는 감성 농장 체험', emoji:'🍇', address:'경기도 안성시 원곡면 일원', lat:37.04, lng:127.10 },
+    { name:'삼죽면 복숭아 농장', category:'체험', tags:'체험,수확,여름,가족', desc:'여름 복숭아 향기 가득, 직접 수확하는 달콤한 하루', emoji:'🍑', address:'경기도 안성시 삼죽면 일원', lat:37.10, lng:127.40 },
+    { name:'안성 별빛마을 캠핑장', category:'캠핑', tags:'캠핑,별,자연,감성,밤하늘', desc:'도심 불빛 없는 맑은 하늘 — 은하수가 보이는 캠핑장', emoji:'⛺', address:'경기도 안성시 일죽면 일원', lat:37.08, lng:127.43 },
+    { name:'안성 공예창작촌', category:'공예', tags:'창작,예술,표현,감성,공방', desc:'도예·염색·가죽 공방이 모인 창작자들의 마을', emoji:'🎨', address:'경기도 안성시 보개면 일원', lat:37.01, lng:127.29 },
+    { name:'서운산 둘레길', category:'트레킹', tags:'산책,자연,혼자,치유,숲', desc:'4.5km 완만한 숲길 — 주말 당일치기 힐링 코스', emoji:'🥾', address:'경기도 안성시 서운면', lat:37.00, lng:127.23 },
+    { name:'안성 백년가게 떡집', category:'식도락', tags:'전통,맛,감성,추억,달콤', desc:'100년 전통 안성 쌀떡 — 한 조각에 담긴 정겨운 시간', emoji:'🍡', address:'경기도 안성시 안성시 중앙동', lat:37.00, lng:127.27 },
+    { name:'양성온천', category:'온천', tags:'치유,온천,피로회복,릴렉스', desc:'피로를 녹이는 탄산 온천 — 몸과 마음이 동시에 쉬는 곳', emoji:'♨️', address:'경기도 안성시 양성면 일원', lat:37.04, lng:127.16 },
+    { name:'안성 구도심 골목길', category:'거리', tags:'감성,레트로,산책,카페,사진', desc:'오래된 간판과 카페가 어우러진 아날로그 감성 골목', emoji:'🏙️', address:'경기도 안성시 구시가지', lat:37.00, lng:127.27 },
+    { name:'안성 농촌 체험마을', category:'체험', tags:'농촌,가족,체험,순수,소박', desc:'도시 아이들과 함께 하는 모내기·고구마 캐기 체험', emoji:'🌾', address:'경기도 안성시 원곡면 일원', lat:37.04, lng:127.11 },
+    { name:'만정저수지 수변공원', category:'수변', tags:'수변,산책,가족,여유,조용', desc:'잔잔한 수면 위 구름 반영 — 사진 찍기 좋은 수변 공원', emoji:'🌅', address:'경기도 안성시 보개면 만정리', lat:37.02, lng:127.31 },
+    { name:'안성 흙빛 도예공방', category:'공예', tags:'도예,창작,집중,힐링,혼자', desc:'흙을 만지며 마음을 고요히 — 1인 도예 클래스 운영', emoji:'🏺', address:'경기도 안성시 보개면', lat:37.01, lng:127.28 },
+    { name:'죽산 오일장', category:'시장', tags:'전통시장,활력,사람,추억,소통', desc:'5일마다 열리는 전통 장터 — 사람 냄새 가득한 안성 풍경', emoji:'🛒', address:'경기도 안성시 죽산면 장터로', lat:37.07, lng:127.41 },
+    { name:'안성 사과 과수원', category:'체험', tags:'수확,가을,가족,설렘,자연', desc:'10월 사과 수확의 계절 — 빨갛게 익은 열매와 함께하는 하루', emoji:'🍎', address:'경기도 안성시 고삼면 일원', lat:37.06, lng:127.35 },
+    { name:'안성 호수 카페거리', category:'카페', tags:'카페,감성,데이트,수변,여유', desc:'호수 뷰 감성 카페들이 늘어선 드라이브 코스', emoji:'☕', address:'경기도 안성시 일대', lat:37.02, lng:127.26 },
+    { name:'칠장산 자연탐방로', category:'트레킹', tags:'자연,호기심,탐험,운동,숲', desc:'다양한 식물 군락과 새 소리 — 자연 관찰 힐링 코스', emoji:'🦅', address:'경기도 안성시 일죽면 칠장리', lat:37.09, lng:127.44 },
+    { name:'안성 마장호수 둘레길', category:'산책', tags:'수변,산책,가족,반려견,여유', desc:'3km 둘레길을 천천히 걸으며 호수를 감상하는 힐링 코스', emoji:'🦆', address:'경기도 안성시 일대', lat:37.03, lng:127.27 },
+    { name:'안성 토기 체험장', category:'공예', tags:'창작,예술,어린이,가족,흙', desc:'전통 토기 빚기부터 채색까지 — 아이와 함께하는 공예 여행', emoji:'🎪', address:'경기도 안성시 보개면', lat:37.01, lng:127.29 },
+    { name:'봉업사지 석불', category:'역사', tags:'역사,고요,성찰,사진,문화', desc:'고려시대 석불 앞에 잠시 멈추는 시간 — 깊은 인문 감성', emoji:'🗿', address:'경기도 안성시 죽산면 매산리', lat:37.08, lng:127.40 },
+    { name:'안성 숲속 글램핑', category:'글램핑', tags:'글램핑,감성,커플,자연,별', desc:'숲 속 아늑한 글램핑 텐트 — 불멍과 함께하는 감성 하룻밤', emoji:'🏕️', address:'경기도 안성시 서운면 일원', lat:37.00, lng:127.22 },
+  ];
+  localStorage.setItem('sponge_places', JSON.stringify(anseong30));
+  updatePlaceList();
+  updatePlacePrompt();
+  toast(`✅ 안성 힐링포인트 ${anseong30.length}개 로드됨`);
 }
 
 // ═══════════════════════════════════════════

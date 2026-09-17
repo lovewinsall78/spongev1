@@ -518,6 +518,111 @@
       pointer-events: none;
     }
 
+    /* ── 4개 시작 카드 ── */
+    .starter-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 14px 16px 8px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .starter-cards.hidden { display: none; }
+    .starter-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 13px 14px;
+      background: rgba(108,99,255,0.08);
+      border: 1.5px solid rgba(108,99,255,0.28);
+      border-radius: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .starter-card:hover { background: rgba(108,99,255,0.18); transform: translateY(-2px); }
+    .starter-card .sc-emoji { font-size: 18px; line-height: 1; }
+    .starter-card .sc-text  { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+
+    /* ── 단계 진행 바 ── */
+    .stage-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .stage-bar.hidden { display: none; }
+    .stage-dots {
+      display: flex;
+      gap: 5px;
+      flex: 1;
+    }
+    .stage-dot {
+      flex: 1;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.12);
+      transition: background 0.4s;
+    }
+    .stage-dot.done  { background: var(--primary); }
+    .stage-dot.active{ background: var(--primary-light); }
+    .stage-label {
+      font-size: 10px;
+      color: var(--text2);
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── 여행카드 ── */
+    .travel-card {
+      margin: 10px 0;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1.5px solid rgba(108,99,255,0.4);
+      background: linear-gradient(145deg, rgba(108,99,255,0.15) 0%, rgba(13,13,43,0.9) 100%);
+      animation: fadeUp 0.55s ease both;
+    }
+    .travel-card-header {
+      padding: 12px 16px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-light);
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(108,99,255,0.2);
+    }
+    .travel-card-body { padding: 14px 16px 16px; }
+    .travel-card-emoji { font-size: 36px; margin-bottom: 8px; }
+    .travel-card-name  { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+    .travel-card-cat   { font-size: 11px; color: var(--primary-light); margin-bottom: 10px; }
+    .travel-card-tags  { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .travel-card-tag   {
+      font-size: 11px; padding: 3px 9px;
+      border-radius: 20px;
+      background: rgba(108,99,255,0.2);
+      border: 1px solid rgba(108,99,255,0.35);
+      color: var(--primary-light);
+    }
+    .travel-card-desc  { font-size: 13px; line-height: 1.65; color: var(--text); margin-bottom: 10px; }
+    .travel-card-addr  { font-size: 11px; color: var(--text2); margin-bottom: 12px; }
+    .travel-card-btn   {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+      text-align: center;
+    }
+    .travel-card-btn:hover { opacity: 0.85; }
+
     .chip {
       flex-shrink: 0;
       padding: 8px 14px;
@@ -738,9 +843,17 @@
     ⚠️ OpenAI API 키를 설정해야 대화 기능이 활성화돼요. index.html의 API_KEY를 입력해 주세요.
   </div>
 
+  <!-- 단계 진행 바 -->
+  <div class="stage-bar hidden" id="stage-bar">
+    <div class="stage-dots" id="stage-dots"></div>
+    <span class="stage-label" id="stage-label">1단계</span>
+  </div>
+
   <!-- 채팅 영역 -->
   <div class="chat-area">
     <div class="chat-messages" id="chat-messages"></div>
+    <!-- 시작 카드 (대화 전) -->
+    <div class="starter-cards hidden" id="starter-cards"></div>
     <div class="suggestion-chips hidden" id="suggestion-chips"></div>
     <div class="chat-input-bar">
       <textarea
@@ -971,28 +1084,218 @@ let selectedChar = null;
 let chatHistory = [];
 let isTyping = false;
 
+// ── 7단계 대화 시스템 ──
+let currentStage = 0;   // 0 = 시작카드 단계, 1~N = 대화 중
+let stageContext = {};  // 각 단계에서 수집된 감정 정보
+
+// 4개 시작카드 (Custom GPT와 동일 구조)
+const STARTER_CARDS = [
+  { emoji: '🎯', text: '안성, 어디에 있나요?',       type: 'location' },
+  { emoji: '💛', text: '마음을 색으로 말해본다면?',   type: 'color'    },
+  { emoji: '👁️', text: '지금 이 순간, 누구랑 있어요?', type: 'who'    },
+  { emoji: '🌿', text: '이 마음과 어울리는 펜션은',   type: 'place'   },
+];
+
+// 단계 기본값 (관리자에서 덮어쓸 수 있음)
+const DEFAULT_STAGES = [
+  { name: '감정 자각',  prompt: '사용자의 현재 감정 상태를 파악하고 공감하세요. 감정 단어를 반드시 반영해 짧게 응답하세요.' },
+  { name: '감정 색채',  prompt: '감정을 색 또는 자연 이미지로 표현하도록 유도하세요. "어떤 색이 지금 마음에 가깝나요?" 같은 방식으로.' },
+  { name: '동반자',     prompt: '지금 혼자인지, 누군가와 함께인지 자연스럽게 파악하세요. 동반자 유무가 장소 추천에 반영됩니다.' },
+  { name: '욕구 탐색',  prompt: '이 여행에서 무엇을 원하는지 탐색하세요. 쉬고 싶은지, 자극이 필요한지, 감동을 원하는지.' },
+  { name: '공간 연결',  prompt: '어떤 분위기의 공간이 끌리는지 물어보세요. 조용한 숲? 탁 트인 들판? 문화적 공간? 아늑한 카페?' },
+  { name: '자기성찰',   prompt: '이 여행이 나에게 주는 의미를 한 문장으로 정리하도록 돕세요.' },
+  { name: '장소 추천',  prompt: '지금까지 대화를 바탕으로 안성 힐링포인트 중 가장 맞는 곳을 추천해주세요. 반드시 장소명, 추천 이유, 감정 연결고리를 포함하세요.' },
+];
+
+function getStageConfig() {
+  try {
+    const saved = localStorage.getItem('sponge_stages');
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr) && arr.length >= 2) return arr;
+    }
+  } catch(e) {}
+  return DEFAULT_STAGES;
+}
+
+function updateStageBar() {
+  const stages = getStageConfig();
+  const bar   = document.getElementById('stage-bar');
+  const dots  = document.getElementById('stage-dots');
+  const label = document.getElementById('stage-label');
+  if (!bar) return;
+
+  if (currentStage === 0) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+
+  dots.innerHTML = stages.map((s, i) => {
+    const cls = i < currentStage - 1 ? 'done' : i === currentStage - 1 ? 'active' : '';
+    return `<div class="stage-dot ${cls}" title="${s.name}"></div>`;
+  }).join('');
+
+  const stg = stages[currentStage - 1];
+  if (label && stg) label.textContent = `${currentStage}단계 · ${stg.name}`;
+}
+
+function advanceStage() {
+  const stages = getStageConfig();
+  if (currentStage < stages.length) {
+    currentStage++;
+    updateStageBar();
+  }
+  // 마지막 단계에서 여행카드 준비 플래그
+  if (currentStage >= stages.length) {
+    setTimeout(triggerTravelCard, 800);
+  }
+}
+
+// 단계별 시스템 프롬프트 주입
+function getStagePromptAddition() {
+  const stages = getStageConfig();
+  const stg = stages[currentStage - 1];
+  if (!stg) return '';
+  return `\n\n[현재 대화 단계: ${currentStage}/${stages.length} — ${stg.name}]\n${stg.prompt}\n짧고 자연스럽게 1-2문장으로 응답하세요.`;
+}
+
+// ── 시작 카드 ──
+function showStarterCards() {
+  const wrap = document.getElementById('starter-cards');
+  const chips = document.getElementById('suggestion-chips');
+  if (!wrap) return;
+  wrap.innerHTML = STARTER_CARDS.map(c =>
+    `<button class="starter-card" onclick="useStarterCard(${JSON.stringify(c.text)}, '${c.type}')">
+       <span class="sc-emoji">${c.emoji}</span>
+       <span class="sc-text">${c.text}</span>
+     </button>`
+  ).join('');
+  wrap.classList.remove('hidden');
+  if (chips) chips.classList.add('hidden');
+}
+
+function hideStarterCards() {
+  const wrap = document.getElementById('starter-cards');
+  if (wrap) wrap.classList.add('hidden');
+}
+
+function useStarterCard(text, type) {
+  stageContext.entryType = type;
+  currentStage = 1;
+  updateStageBar();
+  hideStarterCards();
+  const input = document.getElementById('chat-input');
+  input.value = text;
+  autoResize(input);
+  sendMessage();
+}
+
+// ── 여행카드 생성 ──
+function triggerTravelCard() {
+  const places = getPlacesFromAdmin();
+  if (!places || places.length === 0) return;
+
+  // 감정 키워드와 수집된 stageContext로 최적 장소 선택
+  const best = selectBestPlace(places);
+  if (!best) return;
+  renderTravelCard(best);
+}
+
+function getPlacesFromAdmin() {
+  try {
+    const raw = localStorage.getItem('sponge_places');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [];
+}
+
+function selectBestPlace(places) {
+  if (!places.length) return null;
+  // 현재 감정 캐릭터 키워드와 장소 감정태그 매칭
+  const emotionKeywords = _currentEmotionChar
+    ? [...(_currentEmotionChar.keywords || []), _currentEmotionChar.emotion]
+    : [];
+  const entryType = stageContext.entryType || '';
+
+  let best = null, maxScore = -1;
+  places.forEach(p => {
+    let score = 0;
+    const tags = (p.tags || '').toLowerCase();
+    emotionKeywords.forEach(kw => { if (tags.includes(kw)) score += 2; });
+    if (entryType === 'color' && tags.includes('감성')) score++;
+    if (entryType === 'location' && p.address) score++;
+    if (entryType === 'place' && (tags.includes('숙박') || tags.includes('펜션'))) score += 2;
+    if (score > maxScore) { maxScore = score; best = p; }
+  });
+  return best || places[Math.floor(Math.random() * places.length)];
+}
+
+function renderTravelCard(place) {
+  const messages = document.getElementById('chat-messages');
+
+  // 봇 아바타 + 안내 메시지
+  const introDiv = document.createElement('div');
+  introDiv.className = 'msg bot';
+  introDiv.innerHTML = `
+    <div class="msg-avatar" style="background:none;overflow:visible;">${getBotAvatarHTML()}</div>
+    <div class="msg-bubble">감정 여행의 끝에서, 딱 맞는 장소를 찾았어요 🌿✨</div>
+  `;
+  messages.appendChild(introDiv);
+
+  // 여행 카드
+  const tags = (place.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const tagHTML = tags.map(t => `<span class="travel-card-tag">${t}</span>`).join('');
+  const mapURL = (place.lat && place.lng)
+    ? `https://map.naver.com/v5/search/${encodeURIComponent(place.name)}`
+    : `https://map.naver.com/v5/search/${encodeURIComponent((place.address || place.name))}`;
+
+  const cardDiv = document.createElement('div');
+  cardDiv.className = 'msg bot';
+  cardDiv.innerHTML = `
+    <div class="msg-avatar" style="background:none;overflow:visible;">${getBotAvatarHTML()}</div>
+    <div class="msg-bubble" style="padding:0; background:none; max-width:100%;">
+      <div class="travel-card">
+        <div class="travel-card-header">✈️ 당신을 위한 여행지 · 안성</div>
+        <div class="travel-card-body">
+          <div class="travel-card-emoji">${place.emoji || '🏞️'}</div>
+          <div class="travel-card-name">${place.name}</div>
+          <div class="travel-card-cat">${place.category || '힐링포인트'}</div>
+          <div class="travel-card-tags">${tagHTML}</div>
+          <div class="travel-card-desc">${place.desc || place.description || ''}</div>
+          <div class="travel-card-addr">📍 ${place.address || '안성시'}</div>
+          <button class="travel-card-btn" onclick="window.open('${mapURL}','_blank')">지도에서 보기 →</button>
+        </div>
+      </div>
+    </div>
+  `;
+  messages.appendChild(cardDiv);
+  messages.scrollTop = messages.scrollHeight;
+  showBubble('여행지를 찾았어요 🌿');
+}
+
 // ══════════════════════════════
 // 예시 문구 풀 (기본값 — 슈퍼관리자에서 덮어쓸 수 있음)
 // ══════════════════════════════
 const SUGGESTION_POOL = [
-  '요즘 자꾸 지쳐요',
-  '아무것도 하기 싫어요',
-  '혼자 있고 싶어요',
-  '기분 전환이 필요해요',
-  '스트레스가 너무 많아요',
-  '누군가가 그리워요',
-  '새로운 자극이 필요해요',
-  '무기력한 기분이에요',
-  '불안한 마음이 있어요',
-  '복잡한 생각이 많아요',
-  '쉬고 싶은데 쉬어지지 않아요',
-  '외로운 것 같아요',
-  '설레는 기분이에요',
-  '화가 나 있어요',
-  '자연 속에 있고 싶어요',
-  '뭔가 변화가 필요해요',
-  '활력이 떨어졌어요',
-  '나를 돌보고 싶어요',
+  // 소진·회복
+  '요즘 자꾸 지쳐요', '아무것도 하기 싫어요', '무기력한 기분이에요',
+  '활력이 떨어졌어요', '쉬고 싶은데 쉬어지지 않아요', '나를 돌보고 싶어요',
+  // 감정 전환
+  '기분 전환이 필요해요', '뭔가 변화가 필요해요', '스트레스가 너무 많아요',
+  // 설렘·기대
+  '설레는 기분이에요', '두근두근 기대가 돼요', '새로운 걸 경험하고 싶어요',
+  // 고립·관계
+  '혼자 있고 싶어요', '외로운 것 같아요', '누군가가 그리워요',
+  // 관계 회복
+  '누군가와 화해하고 싶어요', '소중한 사람이 생각나요', '함께 걷고 싶은 사람이 있어요',
+  // 불안·걱정
+  '불안한 마음이 있어요', '복잡한 생각이 많아요', '화가 나 있어요',
+  // 자연·공간
+  '자연 속에 있고 싶어요', '고요한 곳이 그리워요', '넓은 하늘을 보고 싶어요',
+  // 감사·충만
+  '요즘 참 감사한 것들이 많아요', '오늘 기분이 꽤 좋아요', '행복한 기억을 떠올렸어요',
+  // 호기심·탐험
+  '새로운 자극이 필요해요', '뭔가 특별한 경험을 하고 싶어요',
+  // 후회·아쉬움
+  '지나간 것들이 아쉬워요', '다시 돌아가고 싶은 순간이 있어요',
 ];
 
 // 슈퍼관리자 칩 > 기본 풀 순서로 읽기
@@ -1089,9 +1392,15 @@ function startChat() {
     document.getElementById('api-notice').style.display = 'block';
   }
 
+  // 단계 초기화
+  currentStage = 0;
+  stageContext = {};
+  updateStageBar();
+
   // 채팅 기록 초기화
   chatHistory = [];
   document.getElementById('chat-messages').innerHTML = '';
+  hideStarterCards();
 
   showScreen('screen-chat');
 
@@ -1157,8 +1466,11 @@ function addBotMessage(text) {
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
-  // 봇 메시지 후 예시 문구 표시
-  setTimeout(showSuggestions, 300);
+  // 봇 메시지 후: 아직 대화 미시작이면 시작카드, 진행 중이면 일반 칩
+  setTimeout(() => {
+    if (currentStage === 0 && chatHistory.length === 0) showStarterCards();
+    else showSuggestions();
+  }, 300);
 }
 
 function addUserMessage(text) {
@@ -1216,6 +1528,10 @@ async function sendMessage() {
   addUserMessage(text);
   chatHistory.push({ role: 'user', content: text });
 
+  // ── 단계 진행 ──
+  hideStarterCards();
+  if (currentStage === 0) { currentStage = 1; updateStageBar(); }
+
   // ── 위험어 감지 (특허 CAUTION 플래그) ──
   if (checkRisk(text)) {
     removeTyping();
@@ -1269,7 +1585,7 @@ async function sendMessage() {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: getFullSystemPrompt() },
+            { role: 'system', content: getFullSystemPrompt() + getStagePromptAddition() },
             ...chatHistory
           ],
           max_tokens: 200,
@@ -1287,6 +1603,8 @@ async function sendMessage() {
     addBotMessage(reply);
     showBubble(reply.length > 40 ? reply.slice(0, 38) + '…' : reply);
     incrementDailyCount(); // 사용량 카운트 증가
+    // 단계 진행 (응답 받을 때마다 다음 단계로)
+    advanceStage();
 
   } catch (err) {
     removeTyping();
