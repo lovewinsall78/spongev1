@@ -1203,25 +1203,8 @@ function deletePlace(idx) {
 }
 
 // ═══════════════════════════════════════════
-// 샘플 데이터 (안성 창조관광)
+// 샘플 데이터 — 아래 loadSamplePlaces()가 실제 함수 (하단에 정의됨)
 // ═══════════════════════════════════════════
-function loadSamplePlaces() {
-  const sample = [
-    { name: '미리내마을 성지순례길', location: '경기 안성시 양성면', cat: 'heal', desc: '성지와 호수, 마을길을 따라 걷는 마음성찰 여행. 고요한 풍경 속에서 나를 돌아보는 시간.', lat: '36.9842', lng: '127.2510', tags: '마음성찰, 산책, 고요함, 자연', link: '' },
-    { name: '선비마을 고택피크닉', location: '경기 안성시 금광면', cat: 'color', desc: '유생복을 입고 고택에서 피크닉을 즐기는 감성 여행. 전통문화와 한옥 풍경이 어우러져요.', lat: '37.0214', lng: '127.2880', tags: '고택, 전통, 피크닉, 한옥', link: '' },
-    { name: '용설호마을 맛깔식탁', location: '경기 안성시 보개면', cat: 'taste', desc: '호수가 아름다운 용설호마을에서 낚시 체험과 로컬 식탁을 즐기는 하루.', lat: '37.0088', lng: '127.3120', tags: '낚시, 로컬푸드, 호수, 먹거리', link: '' },
-    { name: '신기팜마을 힐링휴게소', location: '경기 안성시 서운면', cat: 'heal', desc: '블루베리와 함께 쉬어가는 감각형 힐링. 퍼플 디저트와 포토존이 어우러진 농촌 힐링.', lat: '37.0441', lng: '127.1980', tags: '블루베리, 농촌, 디저트, 포토존', link: '' },
-    { name: '청룡사거리 옛빛산책', location: '경기 안성시 죽산면', cat: 'color', desc: '청룡사와 이해룡 고가, 성황당을 따라 걷는 역사문화 산책. 오래된 이야기를 만납니다.', lat: '37.0632', lng: '127.4210', tags: '역사, 사찰, 문화재, 산책', link: '' },
-    { name: '풍산개마을 끼깔운동회', location: '경기 안성시 고삼면', cat: 'exp', desc: '함께 뛰고 웃으며 즐기는 단체형 농촌운동회. 보리수 먹거리와 팀별 미션이 결합된 특별한 하루.', lat: '37.0318', lng: '127.2650', tags: '단체, 운동회, 체험, 활력', link: '' }
-  ];
-
-  const existing = getPlaces();
-  const merged = [...existing, ...sample.filter(s => !existing.find(e => e.name === s.name))];
-  savePlaces(merged);
-  renderPlaces();
-  addLog('place', '샘플 장소 ' + sample.length + '개 불러옴');
-  toast('✅ 샘플 힐링포인트 6개가 추가됐어요');
-}
 
 // ═══════════════════════════════════════════
 // 캐릭터 프롬프트 모달
@@ -1744,9 +1727,9 @@ function loadSamplePlaces() {
     { name:'봉업사지 석불', category:'역사', tags:'역사,고요,성찰,사진,문화', desc:'고려시대 석불 앞에 잠시 멈추는 시간 — 깊은 인문 감성', emoji:'🗿', address:'경기도 안성시 죽산면 매산리', lat:37.08, lng:127.40 },
     { name:'안성 숲속 글램핑', category:'글램핑', tags:'글램핑,감성,커플,자연,별', desc:'숲 속 아늑한 글램핑 텐트 — 불멍과 함께하는 감성 하룻밤', emoji:'🏕️', address:'경기도 안성시 서운면 일원', lat:37.00, lng:127.22 },
   ];
-  localStorage.setItem('sponge_places', JSON.stringify(anseong30));
-  updatePlaceList();
-  updatePlacePrompt();
+  savePlaces(anseong30);
+  renderPlaces();
+  addLog('place', `안성 샘플 ${anseong30.length}개 로드됨`);
   toast(`✅ 안성 힐링포인트 ${anseong30.length}개 로드됨`);
 }
 
