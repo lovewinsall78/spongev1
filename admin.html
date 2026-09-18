@@ -32,6 +32,16 @@
       padding-bottom: 60px;
     }
 
+    /* 헤더와 메뉴를 함께 고정해 높이 변화에도 겹치지 않도록 유지 */
+    .admin-navigation {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding-top: env(safe-area-inset-top, 0px);
+      background: var(--bg);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    }
+
     /* ── 헤더 ── */
     .admin-header {
       background: var(--bg2);
@@ -40,9 +50,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+
     }
 
     .admin-header h1 {
@@ -525,6 +533,7 @@
 </head>
 <body>
 
+<div class="admin-navigation">
 <div class="admin-header">
   <h1>⚙️ 스펀지맵 관리자</h1>
   <span id="header-date">—</span>
@@ -542,6 +551,8 @@
   <button class="tab" onclick="switchTab('super')" style="color:#fbbf24;">🔐 슈퍼관리자</button>
 </div>
 
+
+</div><!-- /admin-navigation -->
 
 <div class="tab-content" id="tab-aurora">
   <div class="section">
