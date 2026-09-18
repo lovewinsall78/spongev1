@@ -535,10 +535,46 @@
   <button class="tab" onclick="switchTab('places')">🗺️ 장소</button>
   <button class="tab" onclick="switchTab('chars')">🎭 캐릭터</button>
   <button class="tab" onclick="switchTab('api')">🔑 API</button>
+  <button class="tab" onclick="switchTab('aurora')">🌈 오로라 배경</button>
   <button class="tab" onclick="switchTab('content')">✏️ UI문구</button>
   <button class="tab" onclick="switchTab('limits')">🚦 운영</button>
   <button class="tab" onclick="switchTab('journey')">📋 대화단계</button>
   <button class="tab" onclick="switchTab('super')" style="color:#fbbf24;">🔐 슈퍼관리자</button>
+</div>
+
+
+<div class="tab-content" id="tab-aurora">
+  <div class="section">
+    <div class="section-title">🌈 대화창 오로라 배경</div>
+    <p class="hint">설정한 시간 범위에서 무작위로 색 조합이 바뀝니다. 기본값은 7~17초입니다.<br>이 브라우저에 저장되며, 같은 브라우저의 열린 대화창에 바로 반영됩니다. 다른 기기·방문자에게는 공유되지 않습니다.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;">
+      <div class="field"><label for="aurora-min">최소 전환 간격 (초)</label><input id="aurora-min" type="number" min="2" max="300" step="0.1"></div>
+      <div class="field"><label for="aurora-max">최대 전환 간격 (초)</label><input id="aurora-max" type="number" min="2" max="300" step="0.1"></div>
+    </div>
+    <p class="hint">2~300초 범위로 설정하세요. 두 값을 같게 하면 일정한 간격으로 바뀝니다.</p>
+  </div>
+  <div class="section">
+    <div class="section-title">느긋한 분위기</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;"><input type="checkbox" id="aurora-enabled-0">랜덤 선택에 포함</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;"><label>색상 1<input type="color" id="aurora-color-0-0" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 2<input type="color" id="aurora-color-0-1" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 3<input type="color" id="aurora-color-0-2" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label></div>
+    <div id="aurora-preview-0" role="img" aria-label="느긋한 분위기 색 조합 미리보기" style="height:100px;margin-top:16px;border-radius:16px;"></div>
+  </div><div class="section">
+    <div class="section-title">에너지 충전</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;"><input type="checkbox" id="aurora-enabled-1">랜덤 선택에 포함</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;"><label>색상 1<input type="color" id="aurora-color-1-0" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 2<input type="color" id="aurora-color-1-1" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 3<input type="color" id="aurora-color-1-2" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label></div>
+    <div id="aurora-preview-1" role="img" aria-label="에너지 충전 색 조합 미리보기" style="height:100px;margin-top:16px;border-radius:16px;"></div>
+  </div><div class="section">
+    <div class="section-title">집중</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;"><input type="checkbox" id="aurora-enabled-2">랜덤 선택에 포함</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;"><label>색상 1<input type="color" id="aurora-color-2-0" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 2<input type="color" id="aurora-color-2-1" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label><label>색상 3<input type="color" id="aurora-color-2-2" style="display:block;width:72px;height:44px;padding:3px;cursor:pointer;" oninput="previewAuroraSettings()"></label></div>
+    <div id="aurora-preview-2" role="img" aria-label="집중 색 조합 미리보기" style="height:100px;margin-top:16px;border-radius:16px;"></div>
+  </div>
+  <p id="aurora-status" role="status" aria-live="polite" style="margin-bottom:12px;"></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="saveAuroraSettings()">배경 설정 저장</button>
+    <button class="btn btn-ghost" onclick="resetAuroraSettings()">기본값 복원</button>
+  </div>
+  <p class="hint" style="margin-top:12px;">한 조합만 선택하면 해당 색상으로 오로라가 흐릅니다. 기기의 동작 줄이기 설정이 켜져 있으면 움직임과 자동 전환이 멈춥니다.</p>
 </div>
 
 <!-- ══ TAB 1: 현황 ══ -->
@@ -1036,6 +1072,87 @@
 <div id="toast"></div>
 
 <script>
+
+const AURORA_KEY = 'sponge_aurora_v1';
+const AURORA_DEFAULTS = {
+  minSeconds: 7, maxSeconds: 17,
+  palettes: [
+    { enabled: true, colors: ['#b9b0b9', '#fa913f', '#369ab5'] },
+    { enabled: true, colors: ['#04ed35', '#55d4cf', '#f6a018'] },
+    { enabled: true, colors: ['#153845', '#427cff', '#007a58'] }
+  ]
+};
+function normalizeAurora(raw) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const validSeconds = value => typeof value === 'number' && Number.isFinite(value) && value >= 2 && value <= 300;
+  let minSeconds = validSeconds(raw.minSeconds) ? raw.minSeconds : 7;
+  let maxSeconds = validSeconds(raw.maxSeconds) ? raw.maxSeconds : 17;
+  if (minSeconds > maxSeconds) { minSeconds = 7; maxSeconds = 17; }
+  const palettes = AURORA_DEFAULTS.palettes.map((fallback, i) => {
+    const p = raw.palettes?.[i];
+    return {
+      enabled: p?.enabled !== false,
+      colors: fallback.colors.map((color, j) => /^#[0-9a-f]{6}$/i.test(p?.colors?.[j]) ? p.colors[j] : color)
+    };
+  });
+  if (!palettes.some(p => p.enabled)) palettes.forEach(p => p.enabled = true);
+  return { minSeconds, maxSeconds, palettes };
+}
+function readAuroraSettings() {
+  try { return normalizeAurora(JSON.parse(localStorage.getItem(AURORA_KEY))); }
+  catch { return normalizeAurora(null); }
+}
+
+function initAuroraSettings() {
+  const settings = readAuroraSettings();
+  document.getElementById('aurora-min').value = settings.minSeconds;
+  document.getElementById('aurora-max').value = settings.maxSeconds;
+  settings.palettes.forEach((p, i) => {
+    document.getElementById('aurora-enabled-' + i).checked = p.enabled;
+    p.colors.forEach((color, j) => document.getElementById('aurora-color-' + i + '-' + j).value = color);
+  });
+  previewAuroraSettings();
+}
+function previewAuroraSettings() {
+  for (let i = 0; i < 3; i++) {
+    const colors = [0,1,2].map(j => document.getElementById('aurora-color-' + i + '-' + j).value);
+    document.getElementById('aurora-preview-' + i).style.background =
+      'radial-gradient(ellipse at 18% 28%, ' + colors[0] + ', transparent 65%), radial-gradient(ellipse at 82% 35%, ' + colors[1] + ', transparent 65%), linear-gradient(135deg, ' + colors[0] + ', ' + colors[2] + ')';
+  }
+}
+function saveAuroraSettings() {
+  const minSeconds = Number(document.getElementById('aurora-min').value);
+  const maxSeconds = Number(document.getElementById('aurora-max').value);
+  const status = document.getElementById('aurora-status');
+  if (!Number.isFinite(minSeconds) || !Number.isFinite(maxSeconds) || minSeconds < 2 || maxSeconds > 300 || minSeconds > maxSeconds) {
+    status.textContent = '최소·최대 시간을 2~300초로 입력하고, 최대 시간을 최소 시간 이상으로 설정해 주세요.';
+    return;
+  }
+  const palettes = [0,1,2].map(i => ({
+    enabled: document.getElementById('aurora-enabled-' + i).checked,
+    colors: [0,1,2].map(j => document.getElementById('aurora-color-' + i + '-' + j).value)
+  }));
+  if (!palettes.some(p => p.enabled)) {
+    status.textContent = '색 조합을 하나 이상 선택해 주세요.';
+    return;
+  }
+  try {
+    localStorage.setItem(AURORA_KEY, JSON.stringify({minSeconds, maxSeconds, palettes}));
+    status.textContent = '저장되었습니다. 같은 브라우저의 대화창에 반영됩니다.';
+  } catch {
+    status.textContent = '저장하지 못했습니다. 브라우저 저장 공간과 설정을 확인해 주세요.';
+  }
+}
+function resetAuroraSettings() {
+  try {
+    localStorage.removeItem(AURORA_KEY);
+    initAuroraSettings();
+    document.getElementById('aurora-status').textContent = '기본 색 조합과 7~17초 간격으로 복원되었습니다.';
+  } catch {
+    document.getElementById('aurora-status').textContent = '설정을 복원하지 못했습니다. 다시 시도해 주세요.';
+  }
+}
+
 // ═══════════════════════════════════════════
 // 기본값
 // ═══════════════════════════════════════════
@@ -1614,7 +1731,7 @@ function saveRiskKeywords() {
 // 탭 전환
 // ═══════════════════════════════════════════
 function switchTab(name) {
-  const tabNames = ['dashboard', 'places', 'chars', 'api', 'content', 'limits', 'journey', 'super'];
+  const tabNames = ['dashboard', 'places', 'chars', 'api', 'aurora', 'content', 'limits', 'journey', 'super'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabNames[i] === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name)?.classList.add('active');
@@ -1737,6 +1854,7 @@ function loadSamplePlaces() {
 // 초기화
 // ═══════════════════════════════════════════
 function init() {
+  initAuroraSettings();
   initDashboard();
   renderPlaces();
 
