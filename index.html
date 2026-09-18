@@ -999,6 +999,7 @@
     <div class="aurora-palette aurora-focus"></div>
   </div>
 
+  <p id="usage-storage-warning" hidden role="status" style="padding:8px 16px;background:#422b14;color:#fff;font-size:12px;">사용량 기록을 저장하지 못했습니다. 관리자 사용량 집계가 누락될 수 있습니다.</p>
   <!-- 2D 캐릭터 패널 -->
   <div class="chat-char-panel">
     <button type="button" class="avatar-action my-character-chat" onclick="openAvatarDialog()" aria-label="내 캐릭터 사진 변경">
@@ -1064,6 +1065,57 @@
 <input type="file" id="avatar-camera-input" accept="image/*" capture="user" hidden onchange="handleAvatarFile(this)" />
 
 <script>
+
+const USAGE_PREFIX = 'sponge_usage_v1_';
+let usageSessionId = null;
+function usageId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+function usageDay(date = new Date()) {
+  return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+}
+function persistUsage(record) {
+  try {
+    localStorage.setItem(USAGE_PREFIX + record.id, JSON.stringify(record));
+    return true;
+  } catch {
+    const warning = document.getElementById('usage-storage-warning');
+    if (warning) warning.hidden = false;
+    return false;
+  }
+}
+function startUsageSession() {
+  usageSessionId = usageId();
+  persistUsage({id:usageSessionId, session:usageSessionId, day:usageDay(), at:new Date().toISOString(), kind:'session'});
+}
+function beginUsageRequest(model) {
+  if (!usageSessionId) startUsageSession();
+  const record = {id:usageId(), session:usageSessionId, day:usageDay(), at:new Date().toISOString(),
+    kind:'api', model, status:'pending', stage:currentStage, stages:getStageConfig().length};
+  persistUsage(record);
+  return record;
+}
+function finishUsageRequest(record, data, errorCode) {
+  if (!record) return;
+  record.status = errorCode ? 'error' : 'success';
+  record.error = errorCode || null;
+  const u = data?.usage;
+  const valid = n => Number.isSafeInteger(n) && n >= 0;
+  if (u && valid(u.prompt_tokens) && valid(u.completion_tokens)) {
+    record.input = u.prompt_tokens;
+    record.output = u.completion_tokens;
+    record.total = u.prompt_tokens + u.completion_tokens;
+    record.usageKnown = true;
+  } else record.usageKnown = false;
+  record.completed = !errorCode && record.stage >= record.stages;
+  persistUsage(record);
+}
+function recordDemoUsage() {
+  if (!usageSessionId) startUsageSession();
+  persistUsage({id:usageId(), session:usageSessionId, day:usageDay(), at:new Date().toISOString(),
+    kind:'demo', stage:currentStage, stages:getStageConfig().length, completed:currentStage >= getStageConfig().length});
+}
+
 
 // 오로라: 처음에는 무작위 팔레트, 이후에는 직전과 다른 팔레트로 전환
 
@@ -1795,6 +1847,7 @@ function selectRandom() {
 // SCREEN 2 → 3
 // ══════════════════════════════
 function startChat() {
+  startUsageSession();
   // 선택 안 됐으면 좋은 기분의 네 친구 중 랜덤 선택
   if (!selectedChar) selectRandom();
 
@@ -1984,6 +2037,9 @@ async function sendMessage() {
     return;
   }
 
+  let usageRequest = null;
+  let usageResponse = null;
+  let usageErrorCode = 'network';
   try {
     let reply;
     // API 키 최신값 읽기
@@ -2000,8 +2056,10 @@ async function sendMessage() {
         '관계에서 오는 피로감이죠 🌱 사람 밀도가 낮고 자연친화도가 높은 공간이 회복에 도움돼요.'
       ];
       reply = demos[Math.floor(Math.random() * demos.length)];
+      recordDemoUsage();
     } else {
       // ── GPT API 호출 ──
+      usageRequest = beginUsageRequest(localStorage.getItem('sponge_model') || 'gpt-3.5-turbo');
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -2019,6 +2077,7 @@ async function sendMessage() {
         })
       });
 
+      usageErrorCode = response.ok ? 'response' : String(response.status);
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
         const code = response.status;
@@ -2028,7 +2087,11 @@ async function sendMessage() {
         throw new Error(`API 오류 ${code}: ${errBody?.error?.message || response.statusText}`);
       }
       const data = await response.json();
-      reply = data.choices[0].message.content;
+      usageResponse = data;
+      reply = data.choices?.[0]?.message?.content;
+      if (typeof reply !== 'string' || !reply.trim()) throw new Error('AI 답변이 비어 있어요. 다시 시도해 주세요.');
+      finishUsageRequest(usageRequest, data, null);
+      usageRequest = null;
       chatHistory.push({ role: 'assistant', content: reply });
     }
 
@@ -2040,6 +2103,7 @@ async function sendMessage() {
     advanceStage();
 
   } catch (err) {
+    finishUsageRequest(usageRequest, usageResponse, usageErrorCode);
     removeTyping();
     const errMsg = `API 연결 오류 😅\n${err.message || 'API 키를 확인해 주세요.'}`;
     addBotMessage(errMsg);
