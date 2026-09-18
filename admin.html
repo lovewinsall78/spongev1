@@ -546,6 +546,7 @@
   <button class="tab" onclick="switchTab('api')">🔑 API</button>
   <button class="tab" onclick="switchTab('aurora')">🌈 오로라 배경</button>
   <button class="tab" onclick="switchTab('content')">✏️ UI문구</button>
+  <button class="tab" onclick="switchTab('usage')">📈 사용량·예산</button>
   <button class="tab" onclick="switchTab('limits')">🚦 운영</button>
   <button class="tab" onclick="switchTab('journey')">📋 대화단계</button>
   <button class="tab" onclick="switchTab('super')" style="color:#fbbf24;">🔐 슈퍼관리자</button>
@@ -553,6 +554,34 @@
 
 
 </div><!-- /admin-navigation -->
+
+
+<div class="tab-content" id="tab-usage">
+  <div class="section">
+    <div class="section-title">📈 사용량 모니터링</div>
+    <p class="hint">이 브라우저의 기록만 표시합니다. 다른 기기·브라우저의 사용량은 합산되지 않습니다. 기능 적용 이후부터 기록하며, 저장소 삭제 시 기록도 사라집니다.<br>세션은 ‘여행 시작’ 횟수이며 실제 사람 수가 아닙니다. 대화 내용·사진·API 키는 사용량 기록에 저장하지 않습니다.</p>
+    <div class="field" style="margin-top:16px;"><label for="usage-date">조회 날짜 (이 기기의 현지 날짜)</label><input type="date" id="usage-date" onchange="renderUsageMonitor()" style="padding:10px;max-width:100%;"></div>
+    <div id="usage-summary" style="line-height:1.9;"></div>
+    <p id="usage-alert" role="status" aria-live="polite" style="margin-top:12px;"></p>
+    <p class="hint">토큰은 API가 반환한 실제 입력·출력량의 합계입니다. 오류·중단·사용량 미수신 요청의 비용은 확정할 수 없으며 OpenAI 사용량 화면에서 대조해야 합니다. 데모 응답은 별도로 집계합니다.</p>
+    <button class="btn btn-ghost btn-sm" onclick="renderUsageMonitor()">새로고침</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportUsageCsv()">조회 날짜 CSV 다운로드</button>
+  </div>
+  <div class="section">
+    <div class="section-title">👥 하루 예상 인원·토큰 예산</div>
+    <div class="field"><label for="usage-people">예상 참여 인원</label><input id="usage-people" type="number" min="1" max="100000" step="1" value="20" oninput="previewUsageBudget()"></div>
+    <div class="field"><label for="usage-per-person">1인당 예상 토큰 (입력+출력)</label><input id="usage-per-person" type="number" min="1" max="10000000" step="1" value="30000" oninput="previewUsageBudget()"></div>
+    <p id="usage-budget-preview" style="margin-bottom:12px;"></p>
+    <button class="btn btn-primary btn-sm" onclick="saveUsageBudget()">예산 저장</button>
+    <p id="usage-budget-status" role="status"></p>
+    <p class="hint">현재 저장된 예산과 조회 날짜 사용량을 비교합니다. 80%·100% 도달 시 알림을 표시하며 API 호출을 차단하지는 않습니다. 실제 비용은 모델별 입력·출력 단가에 따라 다릅니다.</p>
+  </div>
+  <div class="section">
+    <div class="section-title">최근 요청 30건</div>
+    <div style="overflow-x:auto;"><table style="width:100%;font-size:12px;text-align:left;white-space:nowrap;"><thead><tr><th>시간</th><th>세션</th><th>유형·모델</th><th>단계</th><th>상태</th><th>입력</th><th>출력</th></tr></thead><tbody id="usage-rows"></tbody></table></div>
+    <p id="usage-updated" class="hint"></p>
+  </div>
+</div>
 
 <div class="tab-content" id="tab-aurora">
   <div class="section">
@@ -1083,6 +1112,140 @@
 <div id="toast"></div>
 
 <script>
+
+const USAGE_PREFIX = 'sponge_usage_v1_';
+const USAGE_BUDGET_KEY = 'sponge_usage_budget_v1';
+function usageDay(date = new Date()) {
+  return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+}
+function readUsageBudget() {
+  try {
+    const b = JSON.parse(localStorage.getItem(USAGE_BUDGET_KEY));
+    if (Number.isInteger(b?.people) && b.people > 0 && b.people <= 100000 &&
+        Number.isInteger(b?.perPerson) && b.perPerson > 0 && b.perPerson <= 10000000) return b;
+  } catch {}
+  return {people:20, perPerson:30000};
+}
+function previewUsageBudget() {
+  const people = Number(document.getElementById('usage-people').value);
+  const perPerson = Number(document.getElementById('usage-per-person').value);
+  document.getElementById('usage-budget-preview').textContent =
+    Number.isInteger(people) && people > 0 && people <= 100000 && Number.isInteger(perPerson) && perPerson > 0 && perPerson <= 10000000
+      ? '하루 예상 예산: ' + (people * perPerson).toLocaleString() + ' 토큰' : '유효한 인원수와 토큰 수를 입력해 주세요.';
+}
+function saveUsageBudget() {
+  const people = Number(document.getElementById('usage-people').value);
+  const perPerson = Number(document.getElementById('usage-per-person').value);
+  const status = document.getElementById('usage-budget-status');
+  if (!Number.isInteger(people) || people < 1 || people > 100000 || !Number.isInteger(perPerson) || perPerson < 1 || perPerson > 10000000) {
+    status.textContent = '인원은 1~100,000명, 1인 토큰은 1~10,000,000의 정수로 입력해 주세요.'; return;
+  }
+  try {
+    localStorage.setItem(USAGE_BUDGET_KEY, JSON.stringify({people,perPerson}));
+    status.textContent = '예산이 저장되었습니다.';
+    renderUsageMonitor();
+  } catch { status.textContent = '저장하지 못했습니다. 브라우저 저장소를 확인해 주세요.'; }
+}
+function readUsageRecords(day) {
+  const records = [];
+  let invalid = 0;
+  for (let i=0;i<localStorage.length;i++) {
+    const key = localStorage.key(i);
+    if (!key?.startsWith(USAGE_PREFIX)) continue;
+    try {
+      const r = JSON.parse(localStorage.getItem(key));
+      if (!r || !['session','api','demo'].includes(r.kind) || typeof r.session !== 'string' || typeof r.at !== 'string' || !Number.isFinite(Date.parse(r.at))) { invalid++; continue; }
+      if (r.day !== day) continue;
+      const valid = n => Number.isSafeInteger(n) && n >= 0;
+      if (r.usageKnown && (!valid(r.input) || !valid(r.output))) r.usageKnown = false;
+      records.push(r);
+    } catch { invalid++; }
+  }
+  return {records,invalid};
+}
+function summarizeUsage(records) {
+  const api = records.filter(r=>r.kind==='api');
+  const sessions = new Set(records.map(r=>r.session)).size;
+  const completed = new Set(api.filter(r=>r.status==='success' && r.completed).map(r=>r.session)).size;
+  const demo = records.filter(r=>r.kind==='demo');
+  const input = api.reduce((n,r)=>n+(r.usageKnown?r.input:0),0);
+  const output = api.reduce((n,r)=>n+(r.usageKnown?r.output:0),0);
+  return {sessions,completed,input,output,total:input+output,
+    success:api.filter(r=>r.status==='success').length,
+    errors:api.filter(r=>r.status==='error').length,
+    pending:api.filter(r=>r.status==='pending').length,
+    unknown:api.filter(r=>r.status!=='pending' && !r.usageKnown).length,
+    demo:demo.length, demoCompleted:new Set(demo.filter(r=>r.completed).map(r=>r.session)).size};
+}
+function renderUsageMonitor() {
+  const box = document.getElementById('usage-summary');
+  if (!box) return;
+  const rows = document.getElementById('usage-rows');
+  box.replaceChildren(); rows.replaceChildren();
+  try {
+    const {records,invalid} = readUsageRecords(document.getElementById('usage-date').value);
+    const s = summarizeUsage(records);
+    const b = readUsageBudget(), budget = b.people*b.perPerson;
+    const metrics = [
+      ['참여 세션 / AI 마지막 단계 응답 완료', s.sessions + ' / ' + s.completed],
+      ['API 응답 성공 / 오류', s.success + ' / ' + s.errors],
+      ['대기·중단 가능 요청 / 사용량 미확인', s.pending + ' / ' + s.unknown],
+      ['데모 응답 / 데모 마지막 단계 완료', s.demo + ' / ' + s.demoCompleted],
+      ['실제 입력 토큰', s.input.toLocaleString()], ['실제 출력 토큰',s.output.toLocaleString()],
+      ['확인된 합계 / 예산',s.total.toLocaleString() + ' / ' + budget.toLocaleString() + ' 토큰'],
+      ['잔여 예산 (확인된 사용량 기준)',Math.max(0,budget-s.total).toLocaleString() + ' 토큰'],
+      ['참여 세션당 평균 (데모·중단 포함)',s.sessions?Math.round(s.total/s.sessions).toLocaleString()+' 토큰':'—']
+    ];
+    metrics.forEach(([label,value])=>{
+      const p=document.createElement('p');p.textContent=label+': '+value;box.appendChild(p);
+    });
+    const pct = s.total/budget*100;
+    document.getElementById('usage-alert').textContent =
+      (pct>=100?'예산 100% 도달 — ':pct>=80?'예산 80% 이상 사용 — ':'') +
+      '현재 '+pct.toFixed(1)+'% 사용'+(s.pending||s.unknown?' · 미확인 요청이 있어 실제 사용량은 더 클 수 있습니다.':'')+
+      (invalid?' · 읽을 수 없는 기록 '+invalid+'건 제외':'');
+    records.filter(r=>r.kind!=='session').sort((a,b)=>b.at.localeCompare(a.at)).slice(0,30).forEach(r=>{
+      const tr=document.createElement('tr');
+      const status=r.kind==='demo'?'데모':r.status==='success'?'성공':r.status==='error'?'오류 '+(r.error||''):'대기·중단 가능';
+      const cells=[new Date(r.at).toLocaleTimeString('ko-KR'),r.session.slice(0,8),r.kind==='demo'?'데모':r.model||'—',
+        r.stage+'/'+r.stages,status,r.usageKnown?r.input.toLocaleString():'—',r.usageKnown?r.output.toLocaleString():'—'];
+      cells.forEach(value=>{const td=document.createElement('td');td.textContent=value;td.style.padding='8px 10px 8px 0';tr.appendChild(td);});
+      rows.appendChild(tr);
+    });
+    if(!records.length) box.appendChild(Object.assign(document.createElement('p'),{textContent:'이 날짜의 기록이 없습니다. 기능 적용 후 대화를 시작하면 기록됩니다.'}));
+    document.getElementById('usage-updated').textContent='최근 갱신: '+new Date().toLocaleTimeString('ko-KR')+' · 이 메뉴를 보는 동안 10초마다 갱신';
+  } catch {
+    document.getElementById('usage-alert').textContent='사용량 기록을 읽지 못했습니다. 브라우저 저장소 접근을 확인해 주세요.';
+  }
+}
+function exportUsageCsv() {
+  try {
+    const day=document.getElementById('usage-date').value;
+    const {records}=readUsageRecords(day);
+    const escape=value=>'"'+String(value??'').replace(/^[=+@-]/,"'<script>").replace(/"/g,'""')+'"';
+    const lines=[['시각','세션ID','유형','모델','단계','전체단계','상태','오류코드','입력토큰','출력토큰','사용량확인','마지막단계완료']];
+    records.forEach(r=>lines.push([r.at,r.session,r.kind,r.model,r.stage,r.stages,r.status,r.error,
+      r.usageKnown?r.input:'',r.usageKnown?r.output:'',r.usageKnown?'확인':'미확인',r.completed?'예':'아니오']));
+    const blob=new Blob(['\uFEFF'+lines.map(row=>row.map(escape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='sponge-usage-'+day+'.csv';
+    document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  } catch { document.getElementById('usage-alert').textContent='사용량 파일을 만들지 못했습니다.'; }
+}
+function initUsageMonitor() {
+  const b=readUsageBudget();
+  document.getElementById('usage-people').value=b.people;
+  document.getElementById('usage-per-person').value=b.perPerson;
+  document.getElementById('usage-date').value=usageDay();
+  previewUsageBudget();
+  renderUsageMonitor();
+}
+window.addEventListener('storage', event=>{
+  if (event.key===null || event.key?.startsWith(USAGE_PREFIX) || event.key===USAGE_BUDGET_KEY) renderUsageMonitor();
+});
+setInterval(()=>{
+  if (!document.hidden && document.getElementById('tab-usage')?.classList.contains('active')) renderUsageMonitor();
+},10000);
+
 
 const AURORA_KEY = 'sponge_aurora_v1';
 const AURORA_DEFAULTS = {
@@ -1742,10 +1905,11 @@ function saveRiskKeywords() {
 // 탭 전환
 // ═══════════════════════════════════════════
 function switchTab(name) {
-  const tabNames = ['dashboard', 'places', 'chars', 'api', 'aurora', 'content', 'limits', 'journey', 'super'];
+  const tabNames = ['dashboard', 'places', 'chars', 'api', 'aurora', 'content', 'usage', 'limits', 'journey', 'super'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabNames[i] === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name)?.classList.add('active');
+  if (name === 'usage') renderUsageMonitor();
   if (name === 'limits')   initStorageInfo();
   if (name === 'journey')  initJourneyTab();
 }
@@ -1865,6 +2029,7 @@ function loadSamplePlaces() {
 // 초기화
 // ═══════════════════════════════════════════
 function init() {
+  initUsageMonitor();
   initAuroraSettings();
   initDashboard();
   renderPlaces();
