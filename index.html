@@ -841,7 +841,7 @@
     }
     .aurora-palette {
       position: absolute; inset: -18%;
-      opacity: 0; transition: opacity 7s ease-in-out;
+      opacity: 0; transition: opacity var(--aurora-fade, 3s) ease-in-out;
     }
     .aurora-palette.active { opacity: 1; }
     .aurora-palette::before, .aurora-palette::after {
@@ -1063,6 +1063,38 @@
 <script>
 
 // 오로라: 처음에는 무작위 팔레트, 이후에는 직전과 다른 팔레트로 전환
+
+const AURORA_KEY = 'sponge_aurora_v1';
+const AURORA_DEFAULTS = {
+  minSeconds: 7, maxSeconds: 17,
+  palettes: [
+    { enabled: true, colors: ['#b9b0b9', '#fa913f', '#369ab5'] },
+    { enabled: true, colors: ['#04ed35', '#55d4cf', '#f6a018'] },
+    { enabled: true, colors: ['#153845', '#427cff', '#007a58'] }
+  ]
+};
+function normalizeAurora(raw) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const validSeconds = value => typeof value === 'number' && Number.isFinite(value) && value >= 2 && value <= 300;
+  let minSeconds = validSeconds(raw.minSeconds) ? raw.minSeconds : 7;
+  let maxSeconds = validSeconds(raw.maxSeconds) ? raw.maxSeconds : 17;
+  if (minSeconds > maxSeconds) { minSeconds = 7; maxSeconds = 17; }
+  const palettes = AURORA_DEFAULTS.palettes.map((fallback, i) => {
+    const p = raw.palettes?.[i];
+    return {
+      enabled: p?.enabled !== false,
+      colors: fallback.colors.map((color, j) => /^#[0-9a-f]{6}$/i.test(p?.colors?.[j]) ? p.colors[j] : color)
+    };
+  });
+  if (!palettes.some(p => p.enabled)) palettes.forEach(p => p.enabled = true);
+  return { minSeconds, maxSeconds, palettes };
+}
+function readAuroraSettings() {
+  try { return normalizeAurora(JSON.parse(localStorage.getItem(AURORA_KEY))); }
+  catch { return normalizeAurora(null); }
+}
+
+let auroraSettings = readAuroraSettings();
 const auroraMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let auroraPalette = -1;
 let auroraTimer = null;
@@ -1070,7 +1102,9 @@ let auroraTimer = null;
 function changeAuroraPalette() {
   const palettes = document.querySelectorAll('.aurora-palette');
   if (!palettes.length) return;
-  const choices = Array.from(palettes, (_, i) => i).filter(i => i !== auroraPalette);
+  const enabled = Array.from(palettes, (_, i) => i).filter(i => auroraSettings.palettes[i].enabled);
+  const alternatives = enabled.filter(i => i !== auroraPalette);
+  const choices = alternatives.length ? alternatives : enabled;
   auroraPalette = choices[Math.floor(Math.random() * choices.length)];
   palettes.forEach((palette, i) => palette.classList.toggle('active', i === auroraPalette));
 }
@@ -1088,10 +1122,22 @@ function syncAurora() {
     auroraTimer = setTimeout(() => {
       changeAuroraPalette();
       syncAurora();
-    }, 18000 + Math.random() * 10000);
+    }, (auroraSettings.minSeconds + Math.random() * (auroraSettings.maxSeconds - auroraSettings.minSeconds)) * 1000);
   }
 }
-document.addEventListener('visibilitychange', syncAurora);
+function applyAuroraSettings() {
+  auroraSettings = readAuroraSettings();
+  document.querySelectorAll('.aurora-palette').forEach((el, i) => {
+    auroraSettings.palettes[i].colors.forEach((color, j) => el.style.setProperty('--aurora-' + ['a', 'b', 'c'][j], color));
+  });
+  document.getElementById('screen-chat').style.setProperty('--aurora-fade', Math.min(3, auroraSettings.minSeconds * .4) + 's');
+  if (auroraPalette >= 0 && !auroraSettings.palettes[auroraPalette].enabled) changeAuroraPalette();
+  syncAurora();
+}
+window.addEventListener('storage', event => {
+  if (event.key === AURORA_KEY || event.key === null) applyAuroraSettings();
+});
+document.addEventListener('visibilitychange', applyAuroraSettings);
 auroraMotion.addEventListener('change', syncAurora);
 
 
@@ -2040,6 +2086,7 @@ function getFullSystemPrompt() {
 // ══════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   initMyAvatar();
+  applyAuroraSettings();
   // 관리자 설정값 반영
   const savedIntro = localStorage.getItem('sponge_intro_text');
   if (savedIntro) {
