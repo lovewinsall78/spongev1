@@ -839,6 +839,7 @@
       background: #0b1420;
       contain: paint;
     }
+    /* 화면 밖 여백을 유지한 채 이동·확대만 적용해 사각 가장자리 노출 방지 */
     .aurora-palette {
       position: absolute; inset: -18%;
       opacity: 0; transition: opacity var(--aurora-fade, 3s) ease-in-out;
@@ -854,7 +855,9 @@
       animation-play-state: paused;
     }
     .aurora-palette::after {
-      opacity: .55; transform: rotate(160deg) scale(1.12);
+      opacity: .55; transform: scale(1.12);
+      background-position: center;
+      background-size: 125% 125%;
       animation-name: aurora-flow-reverse; animation-duration: 31s;
     }
     .aurora-relax {
@@ -878,13 +881,13 @@
     #screen-chat .starter-card { background: rgba(13,17,35,.74); }
     #screen-chat .starter-card:hover { background: rgba(40,38,78,.9); }
     @keyframes aurora-flow {
-      0% { transform: translate(-4%, -3%) rotate(-12deg) scale(1); }
-      50% { transform: translate(5%, 4%) rotate(8deg) scale(1.14); }
-      100% { transform: translate(-2%, 6%) rotate(18deg) scale(1.06); }
+      0% { transform: translate(-4%, -3%) scale(1); }
+      50% { transform: translate(5%, 4%) scale(1.14); }
+      100% { transform: translate(-2%, 6%) scale(1.06); }
     }
     @keyframes aurora-flow-reverse {
-      from { transform: translate(5%, -4%) rotate(160deg) scale(1.12); }
-      to { transform: translate(-5%, 5%) rotate(195deg) scale(1.24); }
+      from { transform: translate(5%, -4%) scale(1.12); }
+      to { transform: translate(-5%, 5%) scale(1.24); }
     }
     @media (prefers-reduced-motion: reduce) {
       .aurora-palette { transition: none; }
