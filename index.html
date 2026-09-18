@@ -165,9 +165,10 @@
     #screen-select {
       background: var(--bg);
       align-items: center;
-      justify-content: center;
-      gap: 28px;
-      padding: 40px 24px;
+      justify-content: flex-start;
+      gap: 18px;
+      padding: max(24px, env(safe-area-inset-top)) 20px max(24px, var(--safe-bottom));
+      overflow-y: auto;
     }
 
     .select-title {
@@ -187,7 +188,7 @@
       font-size: 14px;
       color: var(--text2);
       text-align: center;
-      margin-top: -16px;
+      margin-top: -6px;
     }
 
     .char-grid {
@@ -202,7 +203,9 @@
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: 20px;
-      padding: 20px 12px 16px;
+      padding: 14px 10px;
+      color: var(--text);
+      font-family: inherit;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -230,26 +233,22 @@
     .char-preview {
       width: 80px;
       height: 80px;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 40px;
-      background: rgba(108,99,255,0.15);
-      overflow: hidden;
+      background: transparent;
+      overflow: visible;
       position: relative;
     }
 
-    /* 스펀지캐.png 없을 때 폴백 이모지 */
-    .char-preview .char-emoji-fallback {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      z-index: 1;
+    .char-card:focus-visible {
+      outline: 3px solid var(--primary-light);
+      outline-offset: 3px;
     }
+    #screen-select > * { flex-shrink: 0; }
+    #screen-select .select-title { margin-top: auto; }
+    #screen-select .btn-start { margin-bottom: auto; }
 
     /* 선택된 카드 — 더 명확한 표시 */
     .char-card.selected {
@@ -829,34 +828,45 @@
   <p class="select-subtitle" id="select-subtitle-txt">Feel. Learn. Become. 🌱</p>
 
   <div class="char-grid">
-    <!-- 캐릭터 A — 고요씨(조용함·치유) -->
-    <div class="char-card" id="card-0" onclick="selectChar(0)">
+    <button type="button" class="char-card" id="card-0" onclick="selectChar(0)" aria-pressed="false">
       <div class="char-preview">
-        <span class="char-emoji-fallback">🫧</span>
-        <img class="char-sprite char-sprite-md" src="png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png" alt="고요씨 · 조용함" />
+        <img class="char-sprite char-sprite-md" src="png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png?v=transparent-v2" alt="반짝이 · 설렘" />
       </div>
-      <div class="char-name">스펀지 블루</div>
-      <div class="char-desc">차분하게 감정을<br>들어주는 친구</div>
-    </div>
+      <div class="char-name">반짝이 · 설렘</div>
+      <div class="char-desc">설레는 순간을<br>함께 찾아요</div>
+    </button>
 
-    <!-- 캐릭터 B — 반짝이(설렘·회복) -->
-    <div class="char-card" id="card-1" onclick="selectChar(1)">
+    <button type="button" class="char-card" id="card-1" onclick="selectChar(1)" aria-pressed="false">
       <div class="char-preview">
-        <span class="char-emoji-fallback">✨</span>
-        <img class="char-sprite char-sprite-md" src="png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png" alt="반짝이 · 설렘" />
+        <img class="char-sprite char-sprite-md" src="png/02_%E1%84%8E%E1%85%A9%E1%84%85%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%92%E1%85%AC%E1%84%87%E1%85%A9%E1%86%A8.png?v=transparent-v2" alt="초록이 · 자연회복" />
       </div>
-      <div class="char-name">스펀지 골드</div>
-      <div class="char-desc">밝은 에너지로<br>회복을 도와줘요</div>
-    </div>
+      <div class="char-name">초록이 · 자연회복</div>
+      <div class="char-desc">자연 속에서<br>마음을 쉬어가요</div>
+    </button>
 
-    <!-- 랜덤 -->
-    <div class="char-card random-card" onclick="selectRandom()">
-      <div class="random-icon">🎲</div>
+    <button type="button" class="char-card" id="card-2" onclick="selectChar(2)" aria-pressed="false">
+      <div class="char-preview">
+        <img class="char-sprite char-sprite-md" src="png/14_%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A2%E1%84%86%E1%85%B5.png?v=transparent-v2" alt="들뜸이 · 재미" />
+      </div>
+      <div class="char-name">들뜸이 · 재미</div>
+      <div class="char-desc">즐거운 경험을<br>함께 발견해요</div>
+    </button>
+
+    <button type="button" class="char-card" id="card-3" onclick="selectChar(3)" aria-pressed="false">
+      <div class="char-preview">
+        <img class="char-sprite char-sprite-md" src="png/17_%E1%84%83%E1%85%B3%E1%86%AB%E1%84%83%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%89%E1%85%B5%E1%86%AB%E1%84%80%E1%85%A1%E1%86%B7.png?v=transparent-v2" alt="든든이 · 자신감" />
+      </div>
+      <div class="char-name">든든이 · 자신감</div>
+      <div class="char-desc">작은 도전에도<br>용기를 더해줘요</div>
+    </button>
+
+    <button type="button" class="char-card random-card" onclick="selectRandom()">
+      <div class="random-icon" aria-hidden="true">🎲</div>
       <div class="random-text">
-        <h3>감각에 맡겨볼게요</h3>
-        <p>지금 이 순간의 감정이 고를 거예요</p>
+        <h3>좋은 기분 친구 랜덤 선택</h3>
+        <p id="random-result" aria-live="polite">네 친구 중 한 명을 만나보세요</p>
       </div>
-    </div>
+    </button>
   </div>
 
   <button class="btn-start" id="btn-start" onclick="startChat()">
@@ -870,9 +880,9 @@
   <!-- 2D 캐릭터 패널 -->
   <div class="chat-char-panel">
     <div class="char-bubble" id="char-bubble"></div>
-    <img class="char-sprite char-sprite-xl" id="chat-sprite" src="png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png" alt="고요씨 · 조용함" />
+    <img class="char-sprite char-sprite-xl" id="chat-sprite" src="png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png?v=transparent-v2" alt="반짝이 · 설렘" />
     <div class="chat-emotion-label" id="chat-emotion-label">힐링 가이드</div>
-    <div class="char-name-badge" id="char-name-badge">스펀지 블루</div>
+    <div class="char-name-badge" id="char-name-badge">반짝이 · 설렘</div>
   </div>
 
   <!-- API 키 안내 -->
@@ -986,30 +996,30 @@ const API_KEY = localStorage.getItem('sponge_api_key') || 'YOUR_OPENAI_API_KEY';
 // ══════════════════════════════
 const EMOTION_CHAR_MAP = [
   // Row 0
-  { id:'bangjaki',   name:'반짝이', emotion:'설렘',    label:'설레는 순간',   image: 'png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png',   keywords:['설레','기대','두근','행복','신나','좋아','즐거'] },
-  { id:'chorokki',   name:'초록이', emotion:'자연회복', label:'자연 속으로',   image: 'png/02_%E1%84%8E%E1%85%A9%E1%84%85%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%92%E1%85%AC%E1%84%87%E1%85%A9%E1%86%A8.png',   keywords:['자연','숲','산책','힐링','신선','풀','바람','공기'] },
-  { id:'molipk',     name:'몰입이', emotion:'집중',    label:'깊은 집중',     image: 'png/03_%E1%84%86%E1%85%A9%E1%86%AF%E1%84%8B%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8C%E1%85%AE%E1%86%BC.png',   keywords:['집중','몰입','생각','공부','일','복잡한','여러가지'] },
-  { id:'urim',       name:'울림이', emotion:'감명',    label:'마음의 울림',   image: 'png/04_%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%85%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A1%E1%86%B7%E1%84%86%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A5%E1%86%A8.png',   keywords:['감동','울림','의미','감명','깊은','뭔가를'] },
+  { id:'bangjaki',   name:'반짝이', emotion:'설렘',    label:'설레는 순간',   image: 'png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png?v=transparent-v2',   keywords:['설레','기대','두근','행복','신나','좋아','즐거'] },
+  { id:'chorokki',   name:'초록이', emotion:'자연회복', label:'자연 속으로',   image: 'png/02_%E1%84%8E%E1%85%A9%E1%84%85%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%92%E1%85%AC%E1%84%87%E1%85%A9%E1%86%A8.png?v=transparent-v2',   keywords:['자연','숲','산책','힐링','신선','풀','바람','공기'] },
+  { id:'molipk',     name:'몰입이', emotion:'집중',    label:'깊은 집중',     image: 'png/03_%E1%84%86%E1%85%A9%E1%86%AF%E1%84%8B%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8C%E1%85%AE%E1%86%BC.png?v=transparent-v2',   keywords:['집중','몰입','생각','공부','일','복잡한','여러가지'] },
+  { id:'urim',       name:'울림이', emotion:'감명',    label:'마음의 울림',   image: 'png/04_%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%85%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A1%E1%86%B7%E1%84%86%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A5%E1%86%A8.png?v=transparent-v2',   keywords:['감동','울림','의미','감명','깊은','뭔가를'] },
   // Row 1
-  { id:'goyo',       name:'고요씨', emotion:'고요함',  label:'고요한 쉼',     image: 'png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png',  keywords:['조용','혼자','고요','평화','아무것도','혼자있','쉬고','무기력','지쳐'] },
-  { id:'changja',    name:'창작이', emotion:'표현',    label:'나를 표현해요', image: 'png/06_%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%91%E1%85%AD%E1%84%92%E1%85%A7%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%89%E1%85%A1%E1%86%BC.png',  keywords:['창작','표현','예술','만들','그리','쓰고','음악'] },
-  { id:'gunggi',     name:'궁금이', emotion:'호기심',  label:'새로운 발견',   image: 'png/07_%E1%84%80%E1%85%AE%E1%86%BC%E1%84%80%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%92%E1%85%A9%E1%84%80%E1%85%B5%E1%84%89%E1%85%B5%E1%86%B7.png',  keywords:['궁금','새로운','변화','탐험','자극','뭔가','뭔가가'] },
-  { id:'giok',       name:'기억이', emotion:'추억',    label:'소중한 기억',   image: 'png/08_%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%AA%E1%84%80%E1%85%A5%E1%84%8E%E1%85%AE%E1%84%8B%E1%85%A5%E1%86%A8.png',  keywords:['그리워','추억','기억','옛날','과거','예전','보고싶'] },
+  { id:'goyo',       name:'고요씨', emotion:'고요함',  label:'고요한 쉼',     image: 'png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png?v=transparent-v2',  keywords:['조용','혼자','고요','평화','아무것도','혼자있','쉬고','무기력','지쳐'] },
+  { id:'changja',    name:'창작이', emotion:'표현',    label:'나를 표현해요', image: 'png/06_%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%91%E1%85%AD%E1%84%92%E1%85%A7%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%89%E1%85%A1%E1%86%BC.png?v=transparent-v2',  keywords:['창작','표현','예술','만들','그리','쓰고','음악'] },
+  { id:'gunggi',     name:'궁금이', emotion:'호기심',  label:'새로운 발견',   image: 'png/07_%E1%84%80%E1%85%AE%E1%86%BC%E1%84%80%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%92%E1%85%A9%E1%84%80%E1%85%B5%E1%84%89%E1%85%B5%E1%86%B7.png?v=transparent-v2',  keywords:['궁금','새로운','변화','탐험','자극','뭔가','뭔가가'] },
+  { id:'giok',       name:'기억이', emotion:'추억',    label:'소중한 기억',   image: 'png/08_%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%AA%E1%84%80%E1%85%A5%E1%84%8E%E1%85%AE%E1%84%8B%E1%85%A5%E1%86%A8.png?v=transparent-v2',  keywords:['그리워','추억','기억','옛날','과거','예전','보고싶'] },
   // Row 2
-  { id:'yeonjol',    name:'연결이', emotion:'우정',    label:'연결의 온기',   image: 'png/09_%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%80%E1%85%A7%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%AE%E1%84%8C%E1%85%A5%E1%86%BC.png',  keywords:['친구','관계','연결','만남','외로','누군가','함께'] },
-  { id:'gongam',     name:'공감이', emotion:'사랑',    label:'따뜻한 공감',   image: 'png/10_%E1%84%80%E1%85%A9%E1%86%BC%E1%84%80%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A1%E1%84%85%E1%85%A1%E1%86%B7.png',  keywords:['사랑','공감','따뜻','포근','위로','아껴'] },
-  { id:'ddodol',     name:'떠들떠들', emotion:'수다',  label:'이야기 나눠요', image: 'png/11_%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF_%E1%84%89%E1%85%AE%E1%84%83%E1%85%A1.png',  keywords:['이야기','수다','대화','소통','말하','나누'] },
-  { id:'sobog',      name:'소속이', emotion:'안전',    label:'안전한 공간',   image: 'png/12_%E1%84%89%E1%85%A9%E1%84%89%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%AB.png',  keywords:['안전','안심','안정','집','소속','편안','익숙'] },
+  { id:'yeonjol',    name:'연결이', emotion:'우정',    label:'연결의 온기',   image: 'png/09_%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%80%E1%85%A7%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%AE%E1%84%8C%E1%85%A5%E1%86%BC.png?v=transparent-v2',  keywords:['친구','관계','연결','만남','외로','누군가','함께'] },
+  { id:'gongam',     name:'공감이', emotion:'사랑',    label:'따뜻한 공감',   image: 'png/10_%E1%84%80%E1%85%A9%E1%86%BC%E1%84%80%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A1%E1%84%85%E1%85%A1%E1%86%B7.png?v=transparent-v2',  keywords:['사랑','공감','따뜻','포근','위로','아껴'] },
+  { id:'ddodol',     name:'떠들떠들', emotion:'수다',  label:'이야기 나눠요', image: 'png/11_%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF_%E1%84%89%E1%85%AE%E1%84%83%E1%85%A1.png?v=transparent-v2',  keywords:['이야기','수다','대화','소통','말하','나누'] },
+  { id:'sobog',      name:'소속이', emotion:'안전',    label:'안전한 공간',   image: 'png/12_%E1%84%89%E1%85%A9%E1%84%89%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%AB.png?v=transparent-v2',  keywords:['안전','안심','안정','집','소속','편안','익숙'] },
   // Row 3
-  { id:'bulan',      name:'불안이', emotion:'걱정',    label:'괜찮아요',      image: 'png/13_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A5%E1%86%A8%E1%84%8C%E1%85%A5%E1%86%BC.png',  keywords:['불안','걱정','두려','무서','떨리','겁','긴장'] },
-  { id:'deulddeum',  name:'들뜸이', emotion:'재미',    label:'신나는 여행',   image: 'png/14_%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A2%E1%84%86%E1%85%B5.png',  keywords:['재미','신나','들뜸','즐거','기분전환','놀고','설레','에너지'] },
-  { id:'pogeun',     name:'포근이', emotion:'위로',    label:'따뜻한 위로',   image: 'png/15_%E1%84%91%E1%85%A9%E1%84%80%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%B1%E1%84%85%E1%85%A9.png',  keywords:['지쳐','피곤','힘들','위로','쉬고','스트레스','무기력','활력','아파','힘드'] },
-  { id:'nollam',     name:'놀람이', emotion:'경이',    label:'놀라운 발견',   image: 'png/16_%E1%84%82%E1%85%A9%E1%86%AF%E1%84%85%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5.png',  keywords:['놀라','신기','경이','와우','대단','처음','예상'] },
+  { id:'bulan',      name:'불안이', emotion:'걱정',    label:'괜찮아요',      image: 'png/13_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A5%E1%86%A8%E1%84%8C%E1%85%A5%E1%86%BC.png?v=transparent-v2',  keywords:['불안','걱정','두려','무서','떨리','겁','긴장'] },
+  { id:'deulddeum',  name:'들뜸이', emotion:'재미',    label:'신나는 여행',   image: 'png/14_%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A2%E1%84%86%E1%85%B5.png?v=transparent-v2',  keywords:['재미','신나','들뜸','즐거','기분전환','놀고','설레','에너지'] },
+  { id:'pogeun',     name:'포근이', emotion:'위로',    label:'따뜻한 위로',   image: 'png/15_%E1%84%91%E1%85%A9%E1%84%80%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%B1%E1%84%85%E1%85%A9.png?v=transparent-v2',  keywords:['지쳐','피곤','힘들','위로','쉬고','스트레스','무기력','활력','아파','힘드'] },
+  { id:'nollam',     name:'놀람이', emotion:'경이',    label:'놀라운 발견',   image: 'png/16_%E1%84%82%E1%85%A9%E1%86%AF%E1%84%85%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5.png?v=transparent-v2',  keywords:['놀라','신기','경이','와우','대단','처음','예상'] },
   // Row 4
-  { id:'deudeun',    name:'든든이', emotion:'자신감',  label:'든든한 동행',   image: 'png/17_%E1%84%83%E1%85%B3%E1%86%AB%E1%84%83%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%89%E1%85%B5%E1%86%AB%E1%84%80%E1%85%A1%E1%86%B7.png', keywords:['자신감','든든','힘','강하','할수있','도전','해낼'] },
-  { id:'danghwang',  name:'당황이', emotion:'긴장',    label:'함께 풀어요',   image: 'png/18_%E1%84%83%E1%85%A1%E1%86%BC%E1%84%92%E1%85%AA%E1%86%BC%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A1%E1%86%BC.png', keywords:['당황','어떻게','모르겠','멘탈','혼란','황당','막막'] },
-  { id:'uul',        name:'우울이', emotion:'슬픔',    label:'같이 있을게요', image: 'png/19_%E1%84%8B%E1%85%AE%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%B3%E1%86%AF%E1%84%91%E1%85%B3%E1%86%B7%E1%84%92%E1%85%B5%E1%86%B7%E1%84%83%E1%85%B3%E1%86%B1.png', keywords:['우울','슬프','눈물','외로워','아무것도','공허','우울해','힘드'] },
-  { id:'bulpyeon',   name:'불편이', emotion:'답답함',  label:'속 시원하게',   image: 'png/20_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%91%E1%85%A7%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%83%E1%85%A1%E1%86%B8%E1%84%83%E1%85%A1%E1%86%B8%E1%84%92%E1%85%A1%E1%86%B7.png', keywords:['화가','답답','짜증','불편','분해','억울','열받'] },
+  { id:'deudeun',    name:'든든이', emotion:'자신감',  label:'든든한 동행',   image: 'png/17_%E1%84%83%E1%85%B3%E1%86%AB%E1%84%83%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%89%E1%85%B5%E1%86%AB%E1%84%80%E1%85%A1%E1%86%B7.png?v=transparent-v2', keywords:['자신감','든든','힘','강하','할수있','도전','해낼'] },
+  { id:'danghwang',  name:'당황이', emotion:'긴장',    label:'함께 풀어요',   image: 'png/18_%E1%84%83%E1%85%A1%E1%86%BC%E1%84%92%E1%85%AA%E1%86%BC%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A1%E1%86%BC.png?v=transparent-v2', keywords:['당황','어떻게','모르겠','멘탈','혼란','황당','막막'] },
+  { id:'uul',        name:'우울이', emotion:'슬픔',    label:'같이 있을게요', image: 'png/19_%E1%84%8B%E1%85%AE%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%B3%E1%86%AF%E1%84%91%E1%85%B3%E1%86%B7%E1%84%92%E1%85%B5%E1%86%B7%E1%84%83%E1%85%B3%E1%86%B1.png?v=transparent-v2', keywords:['우울','슬프','눈물','외로워','아무것도','공허','우울해','힘드'] },
+  { id:'bulpyeon',   name:'불편이', emotion:'답답함',  label:'속 시원하게',   image: 'png/20_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%91%E1%85%A7%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%83%E1%85%A1%E1%86%B8%E1%84%83%E1%85%A1%E1%86%B8%E1%84%92%E1%85%A1%E1%86%B7.png?v=transparent-v2', keywords:['화가','답답','짜증','불편','분해','억울','열받'] },
 ];
 
 // 기본 프롬프트 (슈퍼 관리자가 덮어쓸 수 있음)
@@ -1073,32 +1083,68 @@ function updateChatSprite(charObj) {
     label._t = setTimeout(() => label.classList.remove('visible'), 3500);
   }
   const nameBadge = document.getElementById('char-name-badge');
-  if (nameBadge) nameBadge.textContent = `${charObj.name} · ${selectedChar?.name || ''}`;
+  if (nameBadge) nameBadge.textContent = `${charObj.name} · ${charObj.emotion}`;
 }
 
 // ══════════════════════════════
-// 선택 가능 가이드 2종 (기본 감정 캐릭터 포함)
+// 좋은 기분의 선택 가능 가이드 4종 (기본 감정 캐릭터 포함)
 // ══════════════════════════════
 // 캐릭터 정의 (프롬프트를 localStorage에서 읽어 적용)
 const CHARACTERS = [
   {
     id: 0,
-    name: '스펀지 블루',
-    defaultSprite: EMOTION_CHAR_MAP[4], // 고요씨 (치유형)
-    personality: '감정을 차분히 들어주는 치유 가이드',
+    name: '반짝이',
+    tone: 'gold',
+    defaultSprite: EMOTION_CHAR_MAP[0],
+    personality: '새로운 기대와 설렘을 함께 발견하는 밝은 친구',
     get systemPrompt() {
-      const superPr = localStorage.getItem('sponge_super_prompt');
-      return (superPr || '') + '\n\n' + (localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE);
+      const superPr = localStorage.getItem('sponge_super_prompt') || '';
+      const base = localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD;
+      const prompt = base.replace(/스펀지 블루|스펀지 골드/g, this.name);
+      return superPr + '\n\n' + prompt + '\n\n너의 이름은 ' + this.name
+        + '야. ' + this.personality + '. 사용자의 힘든 감정도 존중하며 억지로 긍정을 강요하지 마.';
     }
   },
   {
     id: 1,
-    name: '스펀지 골드',
-    defaultSprite: EMOTION_CHAR_MAP[0], // 반짝이 (회복형)
-    personality: '밝은 에너지로 감정을 회복시켜주는 친구',
+    name: '초록이',
+    tone: 'blue',
+    defaultSprite: EMOTION_CHAR_MAP[1],
+    personality: '자연 속에서 편안하게 회복하도록 돕는 차분한 친구',
     get systemPrompt() {
-      const superPr = localStorage.getItem('sponge_super_prompt');
-      return (superPr || '') + '\n\n' + (localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD);
+      const superPr = localStorage.getItem('sponge_super_prompt') || '';
+      const base = localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE;
+      const prompt = base.replace(/스펀지 블루|스펀지 골드/g, this.name);
+      return superPr + '\n\n' + prompt + '\n\n너의 이름은 ' + this.name
+        + '야. ' + this.personality + '. 사용자의 힘든 감정도 존중하며 억지로 긍정을 강요하지 마.';
+    }
+  },
+  {
+    id: 2,
+    name: '들뜸이',
+    tone: 'gold',
+    defaultSprite: EMOTION_CHAR_MAP[13],
+    personality: '즐거운 체험과 기분 전환을 함께 찾는 활기찬 친구',
+    get systemPrompt() {
+      const superPr = localStorage.getItem('sponge_super_prompt') || '';
+      const base = localStorage.getItem('sponge_prompt_gold') || DEFAULT_PROMPT_GOLD;
+      const prompt = base.replace(/스펀지 블루|스펀지 골드/g, this.name);
+      return superPr + '\n\n' + prompt + '\n\n너의 이름은 ' + this.name
+        + '야. ' + this.personality + '. 사용자의 힘든 감정도 존중하며 억지로 긍정을 강요하지 마.';
+    }
+  },
+  {
+    id: 3,
+    name: '든든이',
+    tone: 'blue',
+    defaultSprite: EMOTION_CHAR_MAP[16],
+    personality: '작은 도전을 응원하며 자신감을 북돋우는 든든한 친구',
+    get systemPrompt() {
+      const superPr = localStorage.getItem('sponge_super_prompt') || '';
+      const base = localStorage.getItem('sponge_prompt_blue') || DEFAULT_PROMPT_BLUE;
+      const prompt = base.replace(/스펀지 블루|스펀지 골드/g, this.name);
+      return superPr + '\n\n' + prompt + '\n\n너의 이름은 ' + this.name
+        + '야. ' + this.personality + '. 사용자의 힘든 감정도 존중하며 억지로 긍정을 강요하지 마.';
     }
   }
 ];
@@ -1401,26 +1447,27 @@ function goToSelect() {
 // 캐릭터 선택
 // ══════════════════════════════
 function selectChar(idx) {
+  if (!CHARACTERS[idx]) return;
   selectedChar = CHARACTERS[idx];
-  document.querySelectorAll('.char-card').forEach((c, i) => {
-    c.classList.toggle('selected', i === idx);
+  document.querySelectorAll('.char-card[id^="card-"]').forEach(c => {
+    const isSelected = c.id === `card-${idx}`;
+    c.classList.toggle('selected', isSelected);
+    c.setAttribute('aria-pressed', String(isSelected));
   });
+  document.getElementById('random-result').textContent =
+    `${selectedChar.name} · ${selectedChar.defaultSprite.emotion} 친구와 함께해요`;
 }
 
 function selectRandom() {
-  const idx = Math.floor(Math.random() * CHARACTERS.length);
-  selectChar(idx);
-  // 랜덤 카드 강조
-  document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
-  document.querySelector('.random-card').classList.add('selected');
+  selectChar(Math.floor(Math.random() * CHARACTERS.length));
 }
 
 // ══════════════════════════════
 // SCREEN 2 → 3
 // ══════════════════════════════
 function startChat() {
-  // 선택 안 됐으면 첫 번째 캐릭터 자동 선택
-  if (!selectedChar) selectChar(0);
+  // 선택 안 됐으면 좋은 기분의 네 친구 중 랜덤 선택
+  if (!selectedChar) selectRandom();
 
   // 감정 이미지 초기화 — 선택 가이드의 기본 캐릭터로 세팅
   _currentEmotionChar = selectedChar.defaultSprite;
@@ -1431,7 +1478,7 @@ function startChat() {
   }
 
   // 이름 배지
-  document.getElementById('char-name-badge').textContent = `${_currentEmotionChar.name} · ${selectedChar.name}`;
+  document.getElementById('char-name-badge').textContent = `${_currentEmotionChar.name} · ${_currentEmotionChar.emotion}`;
 
   // API 키 체크
   if (API_KEY === 'YOUR_OPENAI_API_KEY') {
@@ -1460,7 +1507,7 @@ function startChat() {
       // 랜딩페이지에서 장소를 선택하고 들어온 경우
       const p = window._contextPlace;
       const catEmoji = { heal:'🌿', color:'🎨', taste:'🍽️', exp:'🎭' }[p.cat] || '📍';
-      const isBlue = selectedChar?.id !== 1;
+      const isBlue = selectedChar?.tone === 'blue';
       const pool = isBlue ? [
         `안녕하세요 🌿 스펀지맵에서 '${p.name}'에 마음이 머무셨군요.\n${catEmoji} ${p.catLabel || p.cat} 장소인데, 지금 어떤 감정으로 그 곳이 끌리셨나요?`,
         `'${p.name}'을 선택하셨네요 💙\n그 공간이 지금 당신에게 필요한 이유가 있을 것 같아요. 조금 더 이야기해줄 수 있어요?`
@@ -1475,7 +1522,7 @@ function startChat() {
     } else if (window._searchQuery) {
       // 랜딩 검색어로 들어온 경우
       const q = window._searchQuery;
-      const isBlue = selectedChar?.id !== 1;
+      const isBlue = selectedChar?.tone === 'blue';
       msg = isBlue
         ? `'${q}'을 찾고 계시는군요 🌿\n그 감성, 조금 더 말해줄 수 있어요? 딱 맞는 힐링포인트를 함께 찾아볼게요.`
         : `'${q}' 느낌을 원하시는군요 ✨\n어떤 감정이 그 키워드를 떠올리게 했을까요? 같이 이야기해봐요 😊`;
@@ -1483,9 +1530,9 @@ function startChat() {
 
     } else {
       const greetings = [
-        `안녕하세요, 저는 ${selectedChar.name}이에요 🌿\n지금 이 순간, 어떤 감정이 느껴지시나요?`,
-        `반가워요 💙 ${selectedChar.name}이 왔어요.\n오늘 마음 상태가 어떠세요? 솔직하게 말해줘도 돼요.`,
-        `Feel. Learn. Become. 🌱\n${selectedChar.name}과 함께 지금 감정을 천천히 들여다봐요.\n어떤 기분으로 오셨나요?`
+        `안녕하세요, 저는 ${selectedChar.name}예요 🌿\n지금 이 순간, 어떤 감정이 느껴지시나요?`,
+        `반가워요 💙 ${selectedChar.name}와 함께해요.\n오늘 마음 상태가 어떠세요? 솔직하게 말해줘도 돼요.`,
+        `Feel. Learn. Become. 🌱\n${selectedChar.name}와 함께 지금 감정을 천천히 들여다봐요.\n어떤 기분으로 오셨나요?`
       ];
       msg = greetings[Math.floor(Math.random() * greetings.length)];
     }
