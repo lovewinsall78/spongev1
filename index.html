@@ -332,25 +332,23 @@
     }
 
     /* ══════════════════════════════
-       스펀지캐 스프라이트 (4열×5행)
+       감정별 개별 PNG 캐릭터
     ══════════════════════════════ */
     .char-sprite {
-      background-image: url('spongech.png');
-      background-size: 400% 500%;
-      background-repeat: no-repeat;
-      border-radius: 50%;
+      display: block;
+      object-fit: contain;
+      object-position: center;
+      border-radius: 0;
       flex-shrink: 0;
-      transition: background-position 0.55s cubic-bezier(0.4,0,0.2,1);
       position: relative;
       z-index: 2; /* 이모지 폴백 위에 표시 */
     }
-    .char-sprite-sm { width: 34px; height: 34px; border-radius: 50%; }
+    .char-sprite-sm { width: 34px; height: 34px; }
     .char-sprite-md { width: 80px; height: 80px; }
     .char-sprite-xl {
       width: 140px;
       height: 140px;
-      border-radius: 28px;
-      box-shadow: 0 12px 40px rgba(108,99,255,0.35);
+      filter: drop-shadow(0 12px 20px rgba(108,99,255,0.35));
       animation: char-breathe 3.2s ease-in-out infinite;
     }
 
@@ -835,7 +833,7 @@
     <div class="char-card" id="card-0" onclick="selectChar(0)">
       <div class="char-preview">
         <span class="char-emoji-fallback">🫧</span>
-        <div class="char-sprite char-sprite-md" style="background-position:0% 25%"></div>
+        <img class="char-sprite char-sprite-md" src="png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png" alt="고요씨 · 조용함" />
       </div>
       <div class="char-name">스펀지 블루</div>
       <div class="char-desc">차분하게 감정을<br>들어주는 친구</div>
@@ -845,7 +843,7 @@
     <div class="char-card" id="card-1" onclick="selectChar(1)">
       <div class="char-preview">
         <span class="char-emoji-fallback">✨</span>
-        <div class="char-sprite char-sprite-md" style="background-position:0% 0%"></div>
+        <img class="char-sprite char-sprite-md" src="png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png" alt="반짝이 · 설렘" />
       </div>
       <div class="char-name">스펀지 골드</div>
       <div class="char-desc">밝은 에너지로<br>회복을 도와줘요</div>
@@ -872,7 +870,7 @@
   <!-- 2D 캐릭터 패널 -->
   <div class="chat-char-panel">
     <div class="char-bubble" id="char-bubble"></div>
-    <div class="char-sprite char-sprite-xl" id="chat-sprite" style="background-position:0% 25%"></div>
+    <img class="char-sprite char-sprite-xl" id="chat-sprite" src="png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png" alt="고요씨 · 조용함" />
     <div class="chat-emotion-label" id="chat-emotion-label">힐링 가이드</div>
     <div class="char-name-badge" id="char-name-badge">스펀지 블루</div>
   </div>
@@ -984,34 +982,34 @@ let _chatRotationStop = null;
 const API_KEY = localStorage.getItem('sponge_api_key') || 'YOUR_OPENAI_API_KEY';
 
 // ══════════════════════════════
-// 🎭 20 스펀지 캐릭터 감정 맵 (스펀지캐.png 4열×5행 스프라이트)
+// 🎭 20 스펀지 캐릭터 감정 맵 (첨부 감정표 순서 · png 폴더 개별 이미지)
 // ══════════════════════════════
 const EMOTION_CHAR_MAP = [
   // Row 0
-  { id:'bangjaki',   name:'반짝이', emotion:'설렘',    label:'설레는 순간',   x:0,     y:0,   keywords:['설레','기대','두근','행복','신나','좋아','즐거'] },
-  { id:'chorokki',   name:'초록이', emotion:'자연회복', label:'자연 속으로',   x:33.33, y:0,   keywords:['자연','숲','산책','힐링','신선','풀','바람','공기'] },
-  { id:'molipk',     name:'몰입이', emotion:'집중',    label:'깊은 집중',     x:66.67, y:0,   keywords:['집중','몰입','생각','공부','일','복잡한','여러가지'] },
-  { id:'urim',       name:'울림이', emotion:'감명',    label:'마음의 울림',   x:100,   y:0,   keywords:['감동','울림','의미','감명','깊은','뭔가를'] },
+  { id:'bangjaki',   name:'반짝이', emotion:'설렘',    label:'설레는 순간',   image: 'png/01_%E1%84%87%E1%85%A1%E1%86%AB%E1%84%8D%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A5%E1%86%AF%E1%84%85%E1%85%A6%E1%86%B7.png',   keywords:['설레','기대','두근','행복','신나','좋아','즐거'] },
+  { id:'chorokki',   name:'초록이', emotion:'자연회복', label:'자연 속으로',   image: 'png/02_%E1%84%8E%E1%85%A9%E1%84%85%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%92%E1%85%AC%E1%84%87%E1%85%A9%E1%86%A8.png',   keywords:['자연','숲','산책','힐링','신선','풀','바람','공기'] },
+  { id:'molipk',     name:'몰입이', emotion:'집중',    label:'깊은 집중',     image: 'png/03_%E1%84%86%E1%85%A9%E1%86%AF%E1%84%8B%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8C%E1%85%AE%E1%86%BC.png',   keywords:['집중','몰입','생각','공부','일','복잡한','여러가지'] },
+  { id:'urim',       name:'울림이', emotion:'감명',    label:'마음의 울림',   image: 'png/04_%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%85%E1%85%B5%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A1%E1%86%B7%E1%84%86%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A5%E1%86%A8.png',   keywords:['감동','울림','의미','감명','깊은','뭔가를'] },
   // Row 1
-  { id:'goyo',       name:'고요씨', emotion:'고요함',  label:'고요한 쉼',     x:0,     y:25,  keywords:['조용','혼자','고요','평화','아무것도','혼자있','쉬고','무기력','지쳐'] },
-  { id:'changja',    name:'창작이', emotion:'표현',    label:'나를 표현해요', x:33.33, y:25,  keywords:['창작','표현','예술','만들','그리','쓰고','음악'] },
-  { id:'gunggi',     name:'궁금이', emotion:'호기심',  label:'새로운 발견',   x:66.67, y:25,  keywords:['궁금','새로운','변화','탐험','자극','뭔가','뭔가가'] },
-  { id:'giok',       name:'기억이', emotion:'추억',    label:'소중한 기억',   x:100,   y:25,  keywords:['그리워','추억','기억','옛날','과거','예전','보고싶'] },
+  { id:'goyo',       name:'고요씨', emotion:'고요함',  label:'고요한 쉼',     image: 'png/05_%E1%84%80%E1%85%A9%E1%84%8B%E1%85%AD%E1%84%8A%E1%85%B5_%E1%84%8C%E1%85%A9%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%92%E1%85%A1%E1%86%B7.png',  keywords:['조용','혼자','고요','평화','아무것도','혼자있','쉬고','무기력','지쳐'] },
+  { id:'changja',    name:'창작이', emotion:'표현',    label:'나를 표현해요', image: 'png/06_%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A1%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%91%E1%85%AD%E1%84%92%E1%85%A7%E1%86%AB%E1%84%89%E1%85%A1%E1%86%BC%E1%84%89%E1%85%A1%E1%86%BC.png',  keywords:['창작','표현','예술','만들','그리','쓰고','음악'] },
+  { id:'gunggi',     name:'궁금이', emotion:'호기심',  label:'새로운 발견',   image: 'png/07_%E1%84%80%E1%85%AE%E1%86%BC%E1%84%80%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%92%E1%85%A9%E1%84%80%E1%85%B5%E1%84%89%E1%85%B5%E1%86%B7.png',  keywords:['궁금','새로운','변화','탐험','자극','뭔가','뭔가가'] },
+  { id:'giok',       name:'기억이', emotion:'추억',    label:'소중한 기억',   image: 'png/08_%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%AA%E1%84%80%E1%85%A5%E1%84%8E%E1%85%AE%E1%84%8B%E1%85%A5%E1%86%A8.png',  keywords:['그리워','추억','기억','옛날','과거','예전','보고싶'] },
   // Row 2
-  { id:'yeonjol',    name:'연결이', emotion:'우정',    label:'연결의 온기',   x:0,     y:50,  keywords:['친구','관계','연결','만남','외로','누군가','함께'] },
-  { id:'gongam',     name:'공감이', emotion:'사랑',    label:'따뜻한 공감',   x:33.33, y:50,  keywords:['사랑','공감','따뜻','포근','위로','아껴'] },
-  { id:'ddodol',     name:'떠들떠들', emotion:'수다',  label:'이야기 나눠요', x:66.67, y:50,  keywords:['이야기','수다','대화','소통','말하','나누'] },
-  { id:'sobog',      name:'소속이', emotion:'안전',    label:'안전한 공간',   x:100,   y:50,  keywords:['안전','안심','안정','집','소속','편안','익숙'] },
+  { id:'yeonjol',    name:'연결이', emotion:'우정',    label:'연결의 온기',   image: 'png/09_%E1%84%8B%E1%85%A7%E1%86%AB%E1%84%80%E1%85%A7%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%AE%E1%84%8C%E1%85%A5%E1%86%BC.png',  keywords:['친구','관계','연결','만남','외로','누군가','함께'] },
+  { id:'gongam',     name:'공감이', emotion:'사랑',    label:'따뜻한 공감',   image: 'png/10_%E1%84%80%E1%85%A9%E1%86%BC%E1%84%80%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%A1%E1%84%85%E1%85%A1%E1%86%B7.png',  keywords:['사랑','공감','따뜻','포근','위로','아껴'] },
+  { id:'ddodol',     name:'떠들떠들', emotion:'수다',  label:'이야기 나눠요', image: 'png/11_%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%A5%E1%84%83%E1%85%B3%E1%86%AF_%E1%84%89%E1%85%AE%E1%84%83%E1%85%A1.png',  keywords:['이야기','수다','대화','소통','말하','나누'] },
+  { id:'sobog',      name:'소속이', emotion:'안전',    label:'안전한 공간',   image: 'png/12_%E1%84%89%E1%85%A9%E1%84%89%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%B5%E1%86%B8%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%AB.png',  keywords:['안전','안심','안정','집','소속','편안','익숙'] },
   // Row 3
-  { id:'bulan',      name:'불안이', emotion:'걱정',    label:'괜찮아요',      x:0,     y:75,  keywords:['불안','걱정','두려','무서','떨리','겁','긴장'] },
-  { id:'deulddeum',  name:'들뜸이', emotion:'재미',    label:'신나는 여행',   x:33.33, y:75,  keywords:['재미','신나','들뜸','즐거','기분전환','놀고','설레','에너지'] },
-  { id:'pogeun',     name:'포근이', emotion:'위로',    label:'따뜻한 위로',   x:66.67, y:75,  keywords:['지쳐','피곤','힘들','위로','쉬고','스트레스','무기력','활력','아파','힘드'] },
-  { id:'nollam',     name:'놀람이', emotion:'경이',    label:'놀라운 발견',   x:100,   y:75,  keywords:['놀라','신기','경이','와우','대단','처음','예상'] },
+  { id:'bulan',      name:'불안이', emotion:'걱정',    label:'괜찮아요',      image: 'png/13_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A5%E1%86%A8%E1%84%8C%E1%85%A5%E1%86%BC.png',  keywords:['불안','걱정','두려','무서','떨리','겁','긴장'] },
+  { id:'deulddeum',  name:'들뜸이', emotion:'재미',    label:'신나는 여행',   image: 'png/14_%E1%84%83%E1%85%B3%E1%86%AF%E1%84%84%E1%85%B3%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A2%E1%84%86%E1%85%B5.png',  keywords:['재미','신나','들뜸','즐거','기분전환','놀고','설레','에너지'] },
+  { id:'pogeun',     name:'포근이', emotion:'위로',    label:'따뜻한 위로',   image: 'png/15_%E1%84%91%E1%85%A9%E1%84%80%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8B%E1%85%B1%E1%84%85%E1%85%A9.png',  keywords:['지쳐','피곤','힘들','위로','쉬고','스트레스','무기력','활력','아파','힘드'] },
+  { id:'nollam',     name:'놀람이', emotion:'경이',    label:'놀라운 발견',   image: 'png/16_%E1%84%82%E1%85%A9%E1%86%AF%E1%84%85%E1%85%A1%E1%86%B7%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8B%E1%85%B5.png',  keywords:['놀라','신기','경이','와우','대단','처음','예상'] },
   // Row 4
-  { id:'deudeun',    name:'든든이', emotion:'자신감',  label:'든든한 동행',   x:0,     y:100, keywords:['자신감','든든','힘','강하','할수있','도전','해낼'] },
-  { id:'danghwang',  name:'당황이', emotion:'긴장',    label:'함께 풀어요',   x:33.33, y:100, keywords:['당황','어떻게','모르겠','멘탈','혼란','황당','막막'] },
-  { id:'uul',        name:'우울이', emotion:'슬픔',    label:'같이 있을게요', x:66.67, y:100, keywords:['우울','슬프','눈물','외로워','아무것도','공허','우울해','힘드'] },
-  { id:'bulpyeon',   name:'불편이', emotion:'답답함',  label:'속 시원하게',   x:100,   y:100, keywords:['화가','답답','짜증','불편','분해','억울','열받'] },
+  { id:'deudeun',    name:'든든이', emotion:'자신감',  label:'든든한 동행',   image: 'png/17_%E1%84%83%E1%85%B3%E1%86%AB%E1%84%83%E1%85%B3%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%8C%E1%85%A1%E1%84%89%E1%85%B5%E1%86%AB%E1%84%80%E1%85%A1%E1%86%B7.png', keywords:['자신감','든든','힘','강하','할수있','도전','해낼'] },
+  { id:'danghwang',  name:'당황이', emotion:'긴장',    label:'함께 풀어요',   image: 'png/18_%E1%84%83%E1%85%A1%E1%86%BC%E1%84%92%E1%85%AA%E1%86%BC%E1%84%8B%E1%85%B5_%E1%84%80%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A1%E1%86%BC.png', keywords:['당황','어떻게','모르겠','멘탈','혼란','황당','막막'] },
+  { id:'uul',        name:'우울이', emotion:'슬픔',    label:'같이 있을게요', image: 'png/19_%E1%84%8B%E1%85%AE%E1%84%8B%E1%85%AE%E1%86%AF%E1%84%8B%E1%85%B5_%E1%84%89%E1%85%B3%E1%86%AF%E1%84%91%E1%85%B3%E1%86%B7%E1%84%92%E1%85%B5%E1%86%B7%E1%84%83%E1%85%B3%E1%86%B1.png', keywords:['우울','슬프','눈물','외로워','아무것도','공허','우울해','힘드'] },
+  { id:'bulpyeon',   name:'불편이', emotion:'답답함',  label:'속 시원하게',   image: 'png/20_%E1%84%87%E1%85%AE%E1%86%AF%E1%84%91%E1%85%A7%E1%86%AB%E1%84%8B%E1%85%B5_%E1%84%83%E1%85%A1%E1%86%B8%E1%84%83%E1%85%A1%E1%86%B8%E1%84%92%E1%85%A1%E1%86%B7.png', keywords:['화가','답답','짜증','불편','분해','억울','열받'] },
 ];
 
 // 기본 프롬프트 (슈퍼 관리자가 덮어쓸 수 있음)
@@ -1041,10 +1039,15 @@ function checkRisk(text) {
 // ══════════════════════════════
 // 감정 캐릭터 감지
 // ══════════════════════════════
-let _currentEmotionChar = null; // 현재 표시 중인 스프라이트 캐릭터
+let _currentEmotionChar = null; // 현재 표시 중인 감정 캐릭터
 
 function detectEmotionChar(text) {
   const lower = text.toLowerCase();
+  // 캐릭터 이름이나 감정을 직접 말하면 겹치는 일반 키워드보다 우선한다.
+  const named = EMOTION_CHAR_MAP.find(ch => lower.includes(ch.name));
+  if (named) return named;
+  const explicit = EMOTION_CHAR_MAP.find(ch => lower.includes(ch.emotion));
+  if (explicit) return explicit;
   let best = null, maxScore = 0;
   for (const ch of EMOTION_CHAR_MAP) {
     let score = 0;
@@ -1059,7 +1062,10 @@ function updateChatSprite(charObj) {
   _currentEmotionChar = charObj;
   const sprite = document.getElementById('chat-sprite');
   const label  = document.getElementById('chat-emotion-label');
-  if (sprite) sprite.style.backgroundPosition = `${charObj.x}% ${charObj.y}%`;
+  if (sprite) {
+    sprite.src = charObj.image;
+    sprite.alt = `${charObj.name} · ${charObj.emotion}`;
+  }
   if (label) {
     label.textContent = charObj.label || charObj.emotion;
     label.classList.add('visible');
@@ -1071,7 +1077,7 @@ function updateChatSprite(charObj) {
 }
 
 // ══════════════════════════════
-// 선택 가능 캐릭터 2종 (스프라이트 위치 포함)
+// 선택 가능 가이드 2종 (기본 감정 캐릭터 포함)
 // ══════════════════════════════
 // 캐릭터 정의 (프롬프트를 localStorage에서 읽어 적용)
 const CHARACTERS = [
@@ -1416,15 +1422,16 @@ function startChat() {
   // 선택 안 됐으면 첫 번째 캐릭터 자동 선택
   if (!selectedChar) selectChar(0);
 
-  // 스프라이트 초기화 — 선택 캐릭터의 기본 스프라이트로 세팅
+  // 감정 이미지 초기화 — 선택 가이드의 기본 캐릭터로 세팅
   _currentEmotionChar = selectedChar.defaultSprite;
   const sprite = document.getElementById('chat-sprite');
   if (sprite && _currentEmotionChar) {
-    sprite.style.backgroundPosition = `${_currentEmotionChar.x}% ${_currentEmotionChar.y}%`;
+    sprite.src = _currentEmotionChar.image;
+    sprite.alt = `${_currentEmotionChar.name} · ${_currentEmotionChar.emotion}`;
   }
 
   // 이름 배지
-  document.getElementById('char-name-badge').textContent = selectedChar.name;
+  document.getElementById('char-name-badge').textContent = `${_currentEmotionChar.name} · ${selectedChar.name}`;
 
   // API 키 체크
   if (API_KEY === 'YOUR_OPENAI_API_KEY') {
@@ -1492,7 +1499,7 @@ function startChat() {
 // ══════════════════════════════
 function getBotAvatarHTML() {
   const c = _currentEmotionChar || (selectedChar?.defaultSprite) || EMOTION_CHAR_MAP[4];
-  return `<div class="char-sprite char-sprite-sm" style="background-position:${c.x}% ${c.y}%"></div>`;
+  return `<img class="char-sprite char-sprite-sm" src="${c.image}" alt="${c.name} · ${c.emotion}" />`;
 }
 
 function addBotMessage(text) {
@@ -1581,7 +1588,7 @@ async function sendMessage() {
     return;
   }
 
-  // ── 감정 감지 → 캐릭터 스프라이트 업데이트 ──
+  // ── 감정 감지 → 개별 캐릭터 PNG 업데이트 ──
   const detected = detectEmotionChar(text);
   if (detected) updateChatSprite(detected);
 
