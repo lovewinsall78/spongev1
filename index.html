@@ -829,6 +829,68 @@
     #avatar-status { min-height: 38px; }
     #avatar-dialog .avatar-done { display: block; margin: 12px 0 0 auto; min-width: 72px; }
 
+  
+    /* 세 가지 감성 팔레트가 천천히 흐르는 오로라 배경 */
+    #screen-chat { isolation: isolate; overflow: hidden; }
+    #screen-chat > :not(.chat-aurora) { position: relative; z-index: 1; }
+    .chat-aurora {
+      position: absolute; inset: 0; z-index: 0;
+      overflow: hidden; pointer-events: none;
+      background: #0b1420;
+      contain: paint;
+    }
+    .aurora-palette {
+      position: absolute; inset: -18%;
+      opacity: 0; transition: opacity 7s ease-in-out;
+    }
+    .aurora-palette.active { opacity: 1; }
+    .aurora-palette::before, .aurora-palette::after {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 18% 28%, var(--aurora-a), transparent 60%),
+        radial-gradient(ellipse at 82% 35%, var(--aurora-b), transparent 58%),
+        radial-gradient(ellipse at 42% 90%, var(--aurora-c), transparent 62%);
+      animation: aurora-flow 23s ease-in-out infinite alternate;
+      animation-play-state: paused;
+    }
+    .aurora-palette::after {
+      opacity: .55; transform: rotate(160deg) scale(1.12);
+      animation-name: aurora-flow-reverse; animation-duration: 31s;
+    }
+    .aurora-relax {
+      --aurora-a: #b9b0b9; --aurora-b: #fa913f; --aurora-c: #369ab5;
+    }
+    .aurora-energy {
+      --aurora-a: #04ed35; --aurora-b: #55d4cf; --aurora-c: #f6a018;
+    }
+    .aurora-focus {
+      --aurora-a: #153845; --aurora-b: #427cff; --aurora-c: #007a58;
+    }
+    .chat-aurora::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(8,12,25,.28), rgba(8,12,25,.58) 55%, rgba(8,12,25,.72));
+    }
+    #screen-chat.aurora-running .aurora-palette::before,
+    #screen-chat.aurora-running .aurora-palette::after { animation-play-state: running; }
+    #screen-chat .chat-char-panel { background: transparent; }
+    #screen-chat .msg.bot .msg-bubble,
+    #screen-chat .typing-indicator { background: rgba(13,17,35,.82); }
+    #screen-chat .starter-card { background: rgba(13,17,35,.74); }
+    #screen-chat .starter-card:hover { background: rgba(40,38,78,.9); }
+    @keyframes aurora-flow {
+      0% { transform: translate(-4%, -3%) rotate(-12deg) scale(1); }
+      50% { transform: translate(5%, 4%) rotate(8deg) scale(1.14); }
+      100% { transform: translate(-2%, 6%) rotate(18deg) scale(1.06); }
+    }
+    @keyframes aurora-flow-reverse {
+      from { transform: translate(5%, -4%) rotate(160deg) scale(1.12); }
+      to { transform: translate(-5%, 5%) rotate(195deg) scale(1.24); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .aurora-palette { transition: none; }
+      .aurora-palette::before, .aurora-palette::after { animation: none; }
+    }
+
   </style>
 </head>
 <body>
@@ -928,6 +990,11 @@
 
 <!-- ══ SCREEN 3: 채팅 ══ -->
 <div id="screen-chat" class="screen hidden">
+  <div class="chat-aurora" aria-hidden="true">
+    <div class="aurora-palette aurora-relax"></div>
+    <div class="aurora-palette aurora-energy"></div>
+    <div class="aurora-palette aurora-focus"></div>
+  </div>
 
   <!-- 2D 캐릭터 패널 -->
   <div class="chat-char-panel">
@@ -994,6 +1061,39 @@
 <input type="file" id="avatar-camera-input" accept="image/*" capture="user" hidden onchange="handleAvatarFile(this)" />
 
 <script>
+
+// 오로라: 처음에는 무작위 팔레트, 이후에는 직전과 다른 팔레트로 전환
+const auroraMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let auroraPalette = -1;
+let auroraTimer = null;
+
+function changeAuroraPalette() {
+  const palettes = document.querySelectorAll('.aurora-palette');
+  if (!palettes.length) return;
+  const choices = Array.from(palettes, (_, i) => i).filter(i => i !== auroraPalette);
+  auroraPalette = choices[Math.floor(Math.random() * choices.length)];
+  palettes.forEach((palette, i) => palette.classList.toggle('active', i === auroraPalette));
+}
+
+function syncAurora() {
+  clearTimeout(auroraTimer);
+  auroraTimer = null;
+  const chat = document.getElementById('screen-chat');
+  if (!chat) return;
+  const visible = !document.hidden && !chat.classList.contains('hidden');
+  if (visible && auroraPalette < 0) changeAuroraPalette();
+  const running = visible && !auroraMotion.matches;
+  chat.classList.toggle('aurora-running', running);
+  if (running) {
+    auroraTimer = setTimeout(() => {
+      changeAuroraPalette();
+      syncAurora();
+    }, 18000 + Math.random() * 10000);
+  }
+}
+document.addEventListener('visibilitychange', syncAurora);
+auroraMotion.addEventListener('change', syncAurora);
+
 
 // ── 내 캐릭터 (사진은 API에 전송하지 않고 브라우저에만 보관) ──
 const MY_AVATAR_KEY = 'sponge_my_avatar_v1';
@@ -1611,6 +1711,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   const el = document.getElementById(id);
   el.classList.remove('hidden');
+  syncAurora();
   // 애니메이션 트리거
   requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'scale(1)'; });
 }
