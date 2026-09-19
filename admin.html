@@ -862,6 +862,16 @@
 <div class="tab-content" id="tab-journey">
 
   <div class="section">
+    <div class="section-title">감정여행 공통 진행 프롬프트</div>
+    <p class="hint">대화의 공감·답변 뒤에 앱이 다음 단계 질문과 해당 선택지를 붙입니다. 아래 단계별 질문·선택지를 수정하세요. 슈퍼관리자의 일반 칩 목록은 단계 진행 중 사용하지 않습니다.</p>
+    <textarea id="flow-prompt-input" rows="7"></textarea>
+    <button class="btn btn-primary btn-sm" onclick="saveFlowPrompt()">진행 프롬프트 저장</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetFlowPrompt()">기본 프롬프트 복원</button>
+    <p class="hint">같은 브라우저에서 새 대화를 시작하면 적용됩니다. 장소 탭에 추천할 안성 장소를 등록해 주세요.</p>
+  </div>
+
+
+  <div class="section">
     <div class="section-title">📋 대화 단계 수 설정</div>
     <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:14px;">
       감정여행 대화를 몇 단계로 진행할지 설정하세요 (최소 3 / 최대 10).<br>
@@ -1126,6 +1136,27 @@
 <div id="toast"></div>
 
 <script>
+const DEFAULT_FLOW_PROMPT = "당신은 안성 크리에이투어 감정여행 안내자입니다. 목적은 감정을 이해하고 등록된 안성 장소·체험으로 연결하는 것입니다. 사용자가 지역이나 이용 방법을 물으면 먼저 간단히 답한 뒤 흐름을 이어갑니다. 이미 답한 질문을 반복하거나 서로 다른 질문을 한꺼번에 하지 않습니다. 단계 순서는 앱이 관리합니다. 일반 단계에서는 공감이나 답변만 1~2문장으로 작성하고 질문·선택지·다음 단계 안내는 쓰지 마세요. 앱이 다음 질문 하나와 그에 맞는 선택지를 붙입니다. 마지막 단계에서는 제공된 추천 후보만 설명하며 확인되지 않은 가격·운영시간·예약 가능 여부를 단정하지 않습니다.";
+function initFlowPrompt() {
+  document.getElementById('flow-prompt-input').value = localStorage.getItem('sponge_flow_prompt_v1') || DEFAULT_FLOW_PROMPT;
+}
+function saveFlowPrompt() {
+  try {
+    const value = document.getElementById('flow-prompt-input').value.trim();
+    if (!value) { toast('진행 프롬프트를 입력해 주세요'); return; }
+    localStorage.setItem('sponge_flow_prompt_v1', value);
+    toast('진행 프롬프트가 저장되었습니다');
+  } catch { toast('저장하지 못했습니다'); }
+}
+function resetFlowPrompt() {
+  localStorage.removeItem('sponge_flow_prompt_v1');
+  initFlowPrompt();
+  toast('기본 진행 프롬프트로 복원했습니다');
+}
+function escapeStageText(value) {
+  return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 
 const INTRO_SWAY_KEY = 'sponge_intro_sway_deg';
 const INTRO_SWAY_DEFAULT = 45.5; // 기존 ±65도의 70%
@@ -1971,16 +2002,85 @@ function switchTab(name) {
 // 대화 단계 설정
 // ═══════════════════════════════════════════
 const DEFAULT_STAGES_ADMIN = [
-  { name: '감정 자각',  prompt: '사용자의 현재 감정 상태를 파악하고 공감하세요. 감정 단어를 반드시 반영해 짧게 응답하세요.' },
-  { name: '감정 색채',  prompt: '감정을 색 또는 자연 이미지로 표현하도록 유도하세요. "어떤 색이 지금 마음에 가깝나요?" 형식으로.' },
-  { name: '동반자',     prompt: '지금 혼자인지, 누군가와 함께인지 자연스럽게 파악하세요.' },
-  { name: '욕구 탐색',  prompt: '이 여행에서 무엇을 원하는지 탐색하세요. 쉬고 싶은지, 자극이 필요한지, 감동을 원하는지.' },
-  { name: '공간 연결',  prompt: '어떤 분위기의 공간이 끌리는지 물어보세요. 조용한 숲? 탁 트인 들판? 아늑한 카페?' },
-  { name: '자기성찰',   prompt: '이 여행이 나에게 주는 의미를 한 문장으로 정리하도록 돕세요.' },
-  { name: '장소 추천',  prompt: '지금까지 대화를 바탕으로 안성 힐링포인트 중 가장 맞는 곳을 추천하세요. 장소명·추천 이유·감정 연결고리를 포함하세요.' },
+  {
+    "name": "감정 자각",
+    "prompt": "사용자의 현재 감정이나 질문에 짧게 응답하고 공감하세요.",
+    "question": "지금 마음에 가장 가까운 기분은 무엇인가요?",
+    "choices": [
+      "조금 지쳐 있어요",
+      "설레고 기대돼요",
+      "마음이 복잡해요",
+      "평온한 기분이에요"
+    ]
+  },
+  {
+    "name": "감정 색채",
+    "prompt": "사용자가 고른 색이나 이미지의 느낌을 짧게 받아주세요.",
+    "question": "그 마음을 색으로 표현하면 어떤 색에 가까운가요?",
+    "choices": [
+      "편안한 초록",
+      "차분한 파랑",
+      "따뜻한 노랑",
+      "설레는 분홍"
+    ]
+  },
+  {
+    "name": "동반자",
+    "prompt": "동행자에 맞춰 여행 분위기를 이해하고 짧게 반응하세요.",
+    "question": "이번 안성 여행은 누구와 함께하고 싶으세요?",
+    "choices": [
+      "혼자 갈래요",
+      "가족과 함께요",
+      "친구와 함께요",
+      "연인과 함께요"
+    ]
+  },
+  {
+    "name": "욕구 탐색",
+    "prompt": "사용자가 여행에서 원하는 회복이나 경험을 짧게 정리하세요.",
+    "question": "이번 여행에서 가장 얻고 싶은 것은 무엇인가요?",
+    "choices": [
+      "편안한 휴식",
+      "새로운 활력",
+      "좋은 추억",
+      "새로운 배움"
+    ]
+  },
+  {
+    "name": "공간 연결",
+    "prompt": "선호하는 공간과 활동을 장소 추천 조건으로 반영하세요.",
+    "question": "어떤 공간이나 체험에 마음이 끌리세요?",
+    "choices": [
+      "숲과 산책길",
+      "탁 트인 풍경",
+      "문화·예술 체험",
+      "농촌·먹거리 체험"
+    ]
+  },
+  {
+    "name": "자기성찰",
+    "prompt": "앞서 나온 감정과 여행의 의미를 한 문장으로 정리하세요.",
+    "question": "여행을 마치고 어떤 마음으로 돌아오고 싶으세요?",
+    "choices": [
+      "마음이 가벼워지면 좋겠어요",
+      "다시 힘을 내고 싶어요",
+      "소중한 추억을 남기고 싶어요",
+      "새로운 나를 발견하고 싶어요"
+    ]
+  },
+  {
+    "name": "장소 추천",
+    "prompt": "등록된 추천 후보의 실제 정보만 이용해 안성 장소와 추천 이유를 설명하세요. 미등록 장소나 예약 정보를 만들지 마세요.",
+    "question": "지금까지 나눈 마음을 바탕으로 안성의 장소를 추천해 드릴까요?",
+    "choices": [
+      "네, 장소를 추천해 주세요",
+      "제 마음에 맞는 체험을 알려주세요"
+    ]
+  }
 ];
 
 function initJourneyTab() {
+  initFlowPrompt();
   try {
     const saved = JSON.parse(localStorage.getItem('sponge_stages') || 'null');
     const stages = saved || DEFAULT_STAGES_ADMIN;
@@ -2001,17 +2101,23 @@ function renderStageEditor(stages) {
   if (!wrap) return;
   let html = '';
   for (let i = 0; i < count; i++) {
-    const stg = current[i] || { name: `${i+1}단계`, prompt: '' };
+    const source = current[i] || { name: `${i+1}단계`, prompt: '' };
+    const fallback = DEFAULT_STAGES_ADMIN.find(x => x.name === source.name) || {};
+    const stg = {...fallback, ...source};
     const isLast = i === count - 1;
     html += `
       <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;">
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
           <span style="font-size:11px; font-weight:700; color:var(--primary-light); background:rgba(108,99,255,0.15); padding:2px 8px; border-radius:8px;">${i+1}단계${isLast ? ' · 결론' : ''}</span>
-          <input type="text" id="stage-name-${i}" value="${stg.name}" placeholder="단계 이름"
+          <input type="text" id="stage-name-${i}" value="${escapeStageText(stg.name)}" placeholder="단계 이름"
             style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; padding:5px 10px;">
         </div>
         <textarea id="stage-prompt-${i}" rows="3" placeholder="이 단계에서 AI에게 줄 지시문"
-          style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; padding:8px 10px; resize:vertical; line-height:1.5;">${stg.prompt}</textarea>
+          style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; padding:8px 10px; resize:vertical; line-height:1.5;">${escapeStageText(stg.prompt)}</textarea>
+        <label style="margin-top:10px;">이 단계에서 사용자에게 보여줄 질문</label>
+        <input type="text" id="stage-question-${i}" value="${escapeStageText(stg.question)}" placeholder="질문 한 가지를 입력하세요">
+        <label style="margin-top:10px;">질문에 맞는 답변 선택지 (한 줄에 하나, 최대 4개)</label>
+        <textarea id="stage-choices-${i}" rows="4">${escapeStageText((stg.choices || []).join('\n'))}</textarea>
       </div>`;
   }
   wrap.innerHTML = html;
@@ -2024,8 +2130,11 @@ function saveStages() {
     stages.push({
       name:   document.getElementById(`stage-name-${i}`)?.value.trim() || `${i+1}단계`,
       prompt: document.getElementById(`stage-prompt-${i}`)?.value.trim() || '',
+      question: document.getElementById(`stage-question-${i}`)?.value.trim() || '',
+      choices: document.getElementById(`stage-choices-${i}`)?.value.split('\n').map(x => x.trim()).filter(Boolean).slice(0,4) || [],
     });
   }
+  if (stages.some(s => !s.question || !s.choices.length)) { toast('각 단계의 질문과 선택지를 입력해 주세요'); return; }
   localStorage.setItem('sponge_stages', JSON.stringify(stages));
   toast('✅ 단계 설정 저장됨');
 }
