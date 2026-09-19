@@ -543,6 +543,7 @@
   <button class="tab active" onclick="switchTab('dashboard')">📊 현황</button>
   <button class="tab" onclick="switchTab('places')">🗺️ 장소</button>
   <button class="tab" onclick="switchTab('chars')">🎭 캐릭터</button>
+  <button class="tab" onclick="switchTab('cloud')">☁️ Firebase</button>
   <button class="tab" onclick="switchTab('api')">🔑 API</button>
   <button class="tab" onclick="switchTab('aurora')">🌈 오로라 배경</button>
   <button class="tab" onclick="switchTab('content')">✏️ UI문구</button>
@@ -555,6 +556,32 @@
 
 </div><!-- /admin-navigation -->
 
+
+
+<div class="tab-content" id="tab-cloud">
+  <div class="section">
+    <div class="section-title">☁️ Firebase 공통 연결</div>
+    <p class="hint">프로젝트: spongemap-81a6e · 현재 웹 연결은 배포 준비 단계입니다. 서버 배포와 테스트 뒤 firebase-client.js의 연결 설정을 활성화해야 합니다. 웹 설정을 등록하는 것만으로 API가 연결되지는 않습니다.</p>
+    <div class="field"><label for="cloud-email">Firebase 관리자 이메일</label><input id="cloud-email" type="email" autocomplete="username"></div>
+    <div class="field"><label for="cloud-password">비밀번호</label><input id="cloud-password" type="password" autocomplete="current-password"></div>
+    <button class="btn btn-primary btn-sm" onclick="cloudLogin()">관리자 로그인</button>
+    <button class="btn btn-ghost btn-sm" onclick="cloudLogout()">로그아웃</button>
+    <p id="cloud-status" role="status" aria-live="polite" class="hint">Firebase Authentication 계정과 서버 관리자 권한이 필요합니다.</p>
+  </div>
+  <div class="section">
+    <div class="section-title">공통 설정 게시</div>
+    <p class="hint">다른 탭에서 수정·저장한 프롬프트, 대화 단계, 장소, 화면 설정을 전체 기기에 게시합니다. API 키·사진·개인 대화·로컬 사용량은 게시하지 않습니다. 기기에서는 다음 대화 시작 시 읽습니다.</p>
+    <button class="btn btn-primary btn-sm" onclick="cloudPublish()">이 브라우저 설정을 공통 설정으로 게시</button>
+    <button class="btn btn-ghost btn-sm" onclick="cloudLoad()">서버 설정을 이 관리자 화면으로 불러오기</button>
+  </div>
+  <div class="section">
+    <div class="section-title">전체 기기 사용량 (서버 호출만)</div>
+    <label for="cloud-day">조회 날짜 (한국 시간)</label><input type="date" id="cloud-day">
+    <button class="btn btn-ghost btn-sm" onclick="cloudUsage()">통합 사용량 조회</button>
+    <pre id="cloud-usage" style="white-space:pre-wrap;line-height:1.8;margin-top:12px;"></pre>
+    <p class="hint">직접 API를 호출한 과거 브라우저 기록은 포함하지 않습니다. 세션은 실제 사람 수와 다릅니다. 대기·사용량 미확인 요청은 실제 비용과 대조해야 합니다. 현재 서버 제한: 전체 200회/일, 익명 계정당 50회/일. 토큰 예산은 알림용입니다.</p>
+  </div>
+</div>
 
 <div class="tab-content" id="tab-usage">
   <div class="section">
@@ -1135,7 +1162,56 @@
 <!-- ══ 토스트 ══ -->
 <div id="toast"></div>
 
+<script src="firebase-client.js"></script>
 <script>
+
+function cloudStatus(message) { document.getElementById('cloud-status').textContent = message; }
+async function cloudLogin() {
+  cloudStatus('관리자 권한 확인 중…');
+  try {
+    await SpongeCloud.login(document.getElementById('cloud-email').value.trim(),document.getElementById('cloud-password').value);
+    document.getElementById('cloud-password').value='';
+    cloudStatus('Firebase 관리자 연결 완료. 공통 설정을 게시할 수 있습니다.');
+  } catch(e) { SpongeCloud.logout(); cloudStatus(e.message); }
+}
+function cloudLogout() { SpongeCloud.logout(); document.getElementById('cloud-password').value=''; document.getElementById('cloud-usage').textContent=''; cloudStatus('로그아웃했습니다'); }
+async function cloudPublish() {
+  if (!confirm('이 브라우저에서 저장한 설정으로 전체 기기 공통 설정을 덮어쓸까요?')) return;
+  try {
+    const defaults = {
+      sponge_stages:JSON.stringify(DEFAULT_STAGES_ADMIN),
+      sponge_flow_prompt_v1:DEFAULT_FLOW_PROMPT
+    };
+    await SpongeCloud.publish(defaults);
+    cloudStatus('공통 설정 게시 완료. 서버 연결이 활성화된 기기의 새 대화에 적용됩니다.');
+  } catch(e) { cloudStatus(e.message); }
+}
+async function cloudLoad() {
+  if (!confirm('서버의 공통 설정을 이 브라우저로 불러올까요? 저장하지 않은 변경 사항은 먼저 저장해 주세요.')) return;
+  try {
+    const {settings}=await SpongeCloud.adminConfig();
+    SpongeCloud.keys.forEach(key => {
+      if(settings[key]!=null)localStorage.setItem(key,settings[key]);else localStorage.removeItem(key);
+    });
+    init(); initJourneyTab();
+    cloudStatus('공통 설정을 불러왔습니다.');
+  } catch(e) { cloudStatus(e.message); }
+}
+async function cloudUsage() {
+  try {
+    const u=await SpongeCloud.usage(document.getElementById('cloud-day').value);
+    const total=(u.input||0)+(u.output||0);
+    document.getElementById('cloud-usage').textContent=[
+      '날짜: '+u.day,
+      '세션: '+(u.sessions||0)+' / 마지막 단계 응답 완료: '+(u.completed||0),
+      'API 요청: '+(u.requests||0)+' / 성공: '+(u.success||0)+' / 오류: '+(u.errors||0),
+      '대기·중단 가능: '+(u.pending||0)+' / 사용량 미확인: '+(u.unknown||0),
+      '입력 토큰: '+(u.input||0).toLocaleString(),
+      '출력 토큰: '+(u.output||0).toLocaleString(),
+      '확인된 합계: '+total.toLocaleString()+' 토큰'
+    ].join('\n');
+  } catch(e) { cloudStatus(e.message); }
+}
 const DEFAULT_FLOW_PROMPT = "당신은 안성 크리에이투어 감정여행 안내자입니다. 목적은 감정을 이해하고 등록된 안성 장소·체험으로 연결하는 것입니다. 사용자가 지역이나 이용 방법을 물으면 먼저 간단히 답한 뒤 흐름을 이어갑니다. 이미 답한 질문을 반복하거나 서로 다른 질문을 한꺼번에 하지 않습니다. 단계 순서는 앱이 관리합니다. 일반 단계에서는 공감이나 답변만 1~2문장으로 작성하고 질문·선택지·다음 단계 안내는 쓰지 마세요. 앱이 다음 질문 하나와 그에 맞는 선택지를 붙입니다. 마지막 단계에서는 제공된 추천 후보만 설명하며 확인되지 않은 가격·운영시간·예약 가능 여부를 단정하지 않습니다.";
 function initFlowPrompt() {
   document.getElementById('flow-prompt-input').value = localStorage.getItem('sponge_flow_prompt_v1') || DEFAULT_FLOW_PROMPT;
@@ -1989,7 +2065,7 @@ function saveRiskKeywords() {
 // 탭 전환
 // ═══════════════════════════════════════════
 function switchTab(name) {
-  const tabNames = ['dashboard', 'places', 'chars', 'api', 'aurora', 'content', 'usage', 'limits', 'journey', 'super'];
+  const tabNames = ['dashboard', 'places', 'chars', 'cloud', 'api', 'aurora', 'content', 'usage', 'limits', 'journey', 'super'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabNames[i] === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name)?.classList.add('active');
@@ -2191,6 +2267,7 @@ function loadSamplePlaces() {
 // 초기화
 // ═══════════════════════════════════════════
 function init() {
+  document.getElementById('cloud-day').value = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   initIntroSway();
   initUsageMonitor();
   initAuroraSettings();
