@@ -1,0 +1,10 @@
+// 이 예시는 자동 배포하지 않습니다. 기존 규칙과 병합하세요.
+// Firestore에서는 다른 match의 allow=true가 아래 제한보다 우선할 수 있습니다.
+// 전체 경로 공개 규칙이 있다면 그 규칙을 먼저 좁혀야 합니다.
+// Admin SDK 서버 접근은 Security Rules를 우회하므로 아래 경로는 클라이언트에 공개할 필요가 없습니다.
+match /spongemapAdmins/{document=**} { allow read, write: if false; }
+match /spongemapConfig/{document=**} { allow read, write: if false; }
+match /spongemapDays/{document=**} { allow read, write: if false; }
+match /spongemapVisitors/{document=**} { allow read, write: if false; }
+match /spongemapSessions/{document=**} { allow read, write: if false; }
+match /spongemapRequests/{document=**} { allow read, write: if false; }
