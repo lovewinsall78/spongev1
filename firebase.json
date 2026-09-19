@@ -1,0 +1,15 @@
+{
+  "functions": [
+    {
+      "source": "firebase/functions",
+      "codebase": "spongemap",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log",
+        ".env.local",
+        "test"
+      ]
+    }
+  ]
+}
