@@ -798,6 +798,20 @@
       <input type="text" id="intro-text-input" placeholder="준비되셨나요, 터치해 주세요" maxlength="30" oninput="updateIntroPreview()" />
     </div>
     <div class="preview-box" id="intro-preview">준비되셨나요, 터치해 주세요</div>
+    <div class="field" style="margin-top:20px;">
+      <label for="intro-sway-range">3D 캐릭터 좌우 움직임 폭</label>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <input type="range" id="intro-sway-range" min="0" max="90" step="0.5" value="45.5" oninput="previewIntroSway()" style="flex:1;min-width:0;accent-color:var(--primary);" />
+        <output id="intro-sway-value" for="intro-sway-range" style="min-width:64px;text-align:right;">±45.5°</output>
+      </div>
+      <p class="hint">0°는 자동 좌우 움직임 없음, 90°는 가장 큰 움직임입니다. 기본 ±45.5°는 이전 ±65°보다 30% 줄인 폭입니다. 회전 속도는 유지됩니다.</p>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="saveIntroSway()">움직임 저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetIntroSway()">움직임 기본값</button>
+      </div>
+      <p id="intro-sway-status" role="status" aria-live="polite" class="hint">같은 브라우저의 첫 화면에 적용됩니다.</p>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-primary btn-sm" onclick="saveContentSettings()">저장</button>
       <button class="btn btn-ghost btn-sm" onclick="resetIntroText()">기본값</button>
@@ -1112,6 +1126,45 @@
 <div id="toast"></div>
 
 <script>
+
+const INTRO_SWAY_KEY = 'sponge_intro_sway_deg';
+const INTRO_SWAY_DEFAULT = 45.5; // 기존 ±65도의 70%
+function readIntroSway() {
+  try {
+    const raw = localStorage.getItem(INTRO_SWAY_KEY);
+    if (raw === null || raw.trim() === '') return INTRO_SWAY_DEFAULT;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 && value <= 90 ? value : INTRO_SWAY_DEFAULT;
+  } catch { return INTRO_SWAY_DEFAULT; }
+}
+
+function previewIntroSway() {
+  const value = Number(document.getElementById('intro-sway-range').value);
+  document.getElementById('intro-sway-value').textContent = value === 0 ? '정지 (0°)' : '±' + value + '°';
+}
+function initIntroSway() {
+  document.getElementById('intro-sway-range').value = readIntroSway();
+  previewIntroSway();
+}
+function saveIntroSway() {
+  const value = Number(document.getElementById('intro-sway-range').value);
+  const status = document.getElementById('intro-sway-status');
+  if (!Number.isFinite(value) || value < 0 || value > 90) {
+    status.textContent = '0~90° 사이로 설정해 주세요.'; return;
+  }
+  try {
+    localStorage.setItem(INTRO_SWAY_KEY, String(value));
+    status.textContent = '저장되었습니다. 같은 브라우저의 첫 화면에 적용됩니다.';
+  } catch { status.textContent = '저장하지 못했습니다. 브라우저 저장소를 확인해 주세요.'; }
+}
+function resetIntroSway() {
+  try {
+    localStorage.removeItem(INTRO_SWAY_KEY);
+    initIntroSway();
+    document.getElementById('intro-sway-status').textContent = '기본 ±45.5°로 복원되었습니다.';
+  } catch { document.getElementById('intro-sway-status').textContent = '복원하지 못했습니다. 다시 시도해 주세요.'; }
+}
+
 
 const USAGE_PREFIX = 'sponge_usage_v1_';
 const USAGE_BUDGET_KEY = 'sponge_usage_budget_v1';
@@ -2029,6 +2082,7 @@ function loadSamplePlaces() {
 // 초기화
 // ═══════════════════════════════════════════
 function init() {
+  initIntroSway();
   initUsageMonitor();
   initAuroraSettings();
   initDashboard();
