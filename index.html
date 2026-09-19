@@ -1066,6 +1066,26 @@
 
 <script>
 
+const INTRO_SWAY_KEY = 'sponge_intro_sway_deg';
+const INTRO_SWAY_DEFAULT = 45.5; // 기존 ±65도의 70%
+function readIntroSway() {
+  try {
+    const raw = localStorage.getItem(INTRO_SWAY_KEY);
+    if (raw === null || raw.trim() === '') return INTRO_SWAY_DEFAULT;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 && value <= 90 ? value : INTRO_SWAY_DEFAULT;
+  } catch { return INTRO_SWAY_DEFAULT; }
+}
+
+let introSwayDegrees = readIntroSway();
+window.addEventListener('storage', event => {
+  if (event.key === INTRO_SWAY_KEY || event.key === null) introSwayDegrees = readIntroSway();
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) introSwayDegrees = readIntroSway();
+});
+
+
 const USAGE_PREFIX = 'sponge_usage_v1_';
 let usageSessionId = null;
 function usageId() {
@@ -1326,7 +1346,8 @@ function startFrontFocusedRotation(viewer, phiDeg, radiusM, amplitudeDeg, speedR
       phase -= speedRad * dt; // phase 감소 → 시계방향
     }
     lastTs = ts;
-    const theta = amplitudeDeg * Math.sin(phase);
+    const amplitude = viewer.id === 'intro-viewer' ? introSwayDegrees : amplitudeDeg;
+    const theta = amplitude * Math.sin(phase);
     viewer.setAttribute('camera-orbit', `${theta.toFixed(2)}deg ${phiDeg}deg ${radiusM}m`);
   }
 
@@ -1348,7 +1369,8 @@ function startFrontFocusedRotation(viewer, phiDeg, radiusM, amplitudeDeg, speedR
           if (orb) {
             // 현재 theta에 맞춰 phase 동기화 → 튀는 현상 방지
             const curTheta = orb.theta * (180 / Math.PI);
-            const ratio = Math.max(-1, Math.min(1, curTheta / amplitudeDeg));
+            const amplitude = viewer.id === 'intro-viewer' ? introSwayDegrees : amplitudeDeg;
+            const ratio = amplitude > 0 ? Math.max(-1, Math.min(1, curTheta / amplitude)) : 0;
             // sin(phase) = ratio → phase = asin(ratio)
             // 현재 방향(감소 중)을 유지하기 위해 π - asin(ratio) 사용
             phase = Math.PI - Math.asin(ratio);
@@ -2206,8 +2228,8 @@ window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loading-screen').classList.add('hide');
       showScreen('screen-intro');
     }, 500);
-    // 인트로: 앞모습 위주 시계방향 자동 회전 (amplitude 65°, 약 14초 주기)
-    startFrontFocusedRotation(introViewer, 80, 4.5, 65, 0.45);
+    // 인트로: 기본 ±45.5° (기존보다 30% 축소), 약 14초 주기
+    startFrontFocusedRotation(introViewer, 80, 4.5, introSwayDegrees, 0.45);
   });
 
   // 폴백: 4초 후 강제 진입
