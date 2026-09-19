@@ -1591,13 +1591,81 @@ const STARTER_CARDS = [
 
 // 단계 기본값 (관리자에서 덮어쓸 수 있음)
 const DEFAULT_STAGES = [
-  { name: '감정 자각',  prompt: '사용자의 현재 감정 상태를 파악하고 공감하세요. 감정 단어를 반드시 반영해 짧게 응답하세요.' },
-  { name: '감정 색채',  prompt: '감정을 색 또는 자연 이미지로 표현하도록 유도하세요. "어떤 색이 지금 마음에 가깝나요?" 같은 방식으로.' },
-  { name: '동반자',     prompt: '지금 혼자인지, 누군가와 함께인지 자연스럽게 파악하세요. 동반자 유무가 장소 추천에 반영됩니다.' },
-  { name: '욕구 탐색',  prompt: '이 여행에서 무엇을 원하는지 탐색하세요. 쉬고 싶은지, 자극이 필요한지, 감동을 원하는지.' },
-  { name: '공간 연결',  prompt: '어떤 분위기의 공간이 끌리는지 물어보세요. 조용한 숲? 탁 트인 들판? 문화적 공간? 아늑한 카페?' },
-  { name: '자기성찰',   prompt: '이 여행이 나에게 주는 의미를 한 문장으로 정리하도록 돕세요.' },
-  { name: '장소 추천',  prompt: '지금까지 대화를 바탕으로 안성 힐링포인트 중 가장 맞는 곳을 추천해주세요. 반드시 장소명, 추천 이유, 감정 연결고리를 포함하세요.' },
+  {
+    "name": "감정 자각",
+    "prompt": "사용자의 현재 감정이나 질문에 짧게 응답하고 공감하세요.",
+    "question": "지금 마음에 가장 가까운 기분은 무엇인가요?",
+    "choices": [
+      "조금 지쳐 있어요",
+      "설레고 기대돼요",
+      "마음이 복잡해요",
+      "평온한 기분이에요"
+    ]
+  },
+  {
+    "name": "감정 색채",
+    "prompt": "사용자가 고른 색이나 이미지의 느낌을 짧게 받아주세요.",
+    "question": "그 마음을 색으로 표현하면 어떤 색에 가까운가요?",
+    "choices": [
+      "편안한 초록",
+      "차분한 파랑",
+      "따뜻한 노랑",
+      "설레는 분홍"
+    ]
+  },
+  {
+    "name": "동반자",
+    "prompt": "동행자에 맞춰 여행 분위기를 이해하고 짧게 반응하세요.",
+    "question": "이번 안성 여행은 누구와 함께하고 싶으세요?",
+    "choices": [
+      "혼자 갈래요",
+      "가족과 함께요",
+      "친구와 함께요",
+      "연인과 함께요"
+    ]
+  },
+  {
+    "name": "욕구 탐색",
+    "prompt": "사용자가 여행에서 원하는 회복이나 경험을 짧게 정리하세요.",
+    "question": "이번 여행에서 가장 얻고 싶은 것은 무엇인가요?",
+    "choices": [
+      "편안한 휴식",
+      "새로운 활력",
+      "좋은 추억",
+      "새로운 배움"
+    ]
+  },
+  {
+    "name": "공간 연결",
+    "prompt": "선호하는 공간과 활동을 장소 추천 조건으로 반영하세요.",
+    "question": "어떤 공간이나 체험에 마음이 끌리세요?",
+    "choices": [
+      "숲과 산책길",
+      "탁 트인 풍경",
+      "문화·예술 체험",
+      "농촌·먹거리 체험"
+    ]
+  },
+  {
+    "name": "자기성찰",
+    "prompt": "앞서 나온 감정과 여행의 의미를 한 문장으로 정리하세요.",
+    "question": "여행을 마치고 어떤 마음으로 돌아오고 싶으세요?",
+    "choices": [
+      "마음이 가벼워지면 좋겠어요",
+      "다시 힘을 내고 싶어요",
+      "소중한 추억을 남기고 싶어요",
+      "새로운 나를 발견하고 싶어요"
+    ]
+  },
+  {
+    "name": "장소 추천",
+    "prompt": "등록된 추천 후보의 실제 정보만 이용해 안성 장소와 추천 이유를 설명하세요. 미등록 장소나 예약 정보를 만들지 마세요.",
+    "question": "지금까지 나눈 마음을 바탕으로 안성의 장소를 추천해 드릴까요?",
+    "choices": [
+      "네, 장소를 추천해 주세요",
+      "제 마음에 맞는 체험을 알려주세요"
+    ]
+  }
 ];
 
 function getStageConfig() {
@@ -1605,7 +1673,13 @@ function getStageConfig() {
     const saved = localStorage.getItem('sponge_stages');
     if (saved) {
       const arr = JSON.parse(saved);
-      if (Array.isArray(arr) && arr.length >= 2) return arr;
+      if (Array.isArray(arr) && arr.length >= 2 && arr.length <= 10 && arr.every(x => x && typeof x.name === 'string')) {
+        return arr.map((stg, i) => {
+          const fallback = DEFAULT_STAGES.find(x => x.name === stg.name) || {};
+          return {...stg, question: stg.question || fallback.question || (stg.name + '에 대해 어떤 생각이 드세요?'),
+            choices: Array.isArray(stg.choices) ? stg.choices.filter(x => typeof x === 'string').slice(0,4) : (fallback.choices || ['다음 단계로 이어갈게요'])};
+        });
+      }
     }
   } catch(e) {}
   return DEFAULT_STAGES;
@@ -1632,22 +1706,32 @@ function updateStageBar() {
 
 function advanceStage() {
   const stages = getStageConfig();
-  if (currentStage < stages.length) {
-    currentStage++;
-    updateStageBar();
+  if (currentStage < stages.length) currentStage++;
+  else if (!stageContext.finished) {
+    stageContext.finished = true;
+    triggerTravelCard();
   }
-  // 마지막 단계에서 여행카드 준비 플래그
-  if (currentStage >= stages.length) {
-    setTimeout(triggerTravelCard, 800);
-  }
+  updateStageBar();
 }
 
 // 단계별 시스템 프롬프트 주입
 function getStagePromptAddition() {
   const stages = getStageConfig();
-  const stg = stages[currentStage - 1];
-  if (!stg) return '';
-  return `\n\n[현재 대화 단계: ${currentStage}/${stages.length} — ${stg.name}]\n${stg.prompt}\n짧고 자연스럽게 1-2문장으로 응답하세요.`;
+  const stg = stages[Math.max(0, currentStage - 1)];
+  let rules = "당신은 안성 크리에이투어 감정여행 안내자입니다. 목적은 감정을 이해하고 등록된 안성 장소·체험으로 연결하는 것입니다. 사용자가 지역이나 이용 방법을 물으면 먼저 간단히 답한 뒤 흐름을 이어갑니다. 이미 답한 질문을 반복하거나 서로 다른 질문을 한꺼번에 하지 않습니다. 단계 순서는 앱이 관리합니다. 일반 단계에서는 공감이나 답변만 1~2문장으로 작성하고 질문·선택지·다음 단계 안내는 쓰지 마세요. 앱이 다음 질문 하나와 그에 맞는 선택지를 붙입니다. 마지막 단계에서는 제공된 추천 후보만 설명하며 확인되지 않은 가격·운영시간·예약 가능 여부를 단정하지 않습니다.";
+  try { rules = localStorage.getItem('sponge_flow_prompt_v1') || rules; } catch {}
+  let prompt = '\n\n[감정여행 진행 규칙]\n' + rules +
+    '\n[현재 사용자가 답한 단계: ' + currentStage + '/' + stages.length + ' — ' + stg.name + ']\n' + stg.prompt;
+  if (currentStage < stages.length) {
+    prompt += '\n앱이 응답 뒤에 다음 질문을 붙입니다: ' + stages[currentStage].question +
+      '\n당신은 사용자의 말에 대한 짧은 답변·공감만 작성하세요. 질문은 작성하지 마세요.';
+  } else {
+    const best = selectBestPlace(getPlacesFromAdmin());
+    stageContext.recommendedPlace = best;
+    prompt += best ? '\n이번 추천 대상(이 장소만 추천): ' + JSON.stringify(best) :
+      '\n등록된 장소가 없습니다. 구체적인 장소를 만들어내지 말고 원하는 여행 분위기를 정리하고 장소 정보 준비 중이라고 안내하세요.';
+  }
+  return prompt;
 }
 
 // ── 시작 카드 ──
@@ -1687,7 +1771,7 @@ function triggerTravelCard() {
   if (!places || places.length === 0) return;
 
   // 감정 키워드와 수집된 stageContext로 최적 장소 선택
-  const best = selectBestPlace(places);
+  const best = stageContext.recommendedPlace || selectBestPlace(places);
   if (!best) return;
   renderTravelCard(best);
 }
@@ -1695,7 +1779,7 @@ function triggerTravelCard() {
 function getPlacesFromAdmin() {
   try {
     const raw = localStorage.getItem('sponge_places');
-    if (raw) return JSON.parse(raw);
+    if (raw) { const places = JSON.parse(raw); return Array.isArray(places) ? places.filter(p => p && typeof p.name === 'string') : []; }
   } catch(e) {}
   return [];
 }
@@ -1711,7 +1795,11 @@ function selectBestPlace(places) {
   let best = null, maxScore = -1;
   places.forEach(p => {
     let score = 0;
-    const tags = (p.tags || '').toLowerCase();
+    const tags = String(p.tags || '').toLowerCase();
+    const answers = Object.values(stageContext.answers || {}).join(' ').toLowerCase();
+    tags.split(/[,，\s]+/).filter(tag => tag.length >= 2).forEach(tag => {
+      if (answers.includes(tag)) score += 3;
+    });
     emotionKeywords.forEach(kw => { if (tags.includes(kw)) score += 2; });
     if (entryType === 'color' && tags.includes('감성')) score++;
     if (entryType === 'location' && p.address) score++;
@@ -1805,14 +1893,16 @@ function getChipPool() {
 
 function showSuggestions() {
   const chips = document.getElementById('suggestion-chips');
-  const pool = getChipPool();
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  const picked = shuffled.slice(0, 4);
-
-  chips.innerHTML = picked.map(text =>
-    `<button class="chip" data-text="${text}" onclick="useChip(this.dataset.text)">${text}</button>`
-  ).join('');
-  chips.classList.remove('hidden');
+  chips.replaceChildren();
+  if (stageContext.finished || isTyping) { chips.classList.add('hidden'); return; }
+  const stage = getStageConfig()[Math.max(0, currentStage - 1)];
+  (stage?.choices || []).slice(0,4).forEach(text => {
+    const button = document.createElement('button');
+    button.className = 'chip'; button.textContent = text;
+    button.addEventListener('click', () => useChip(text));
+    chips.appendChild(button);
+  });
+  chips.classList.toggle('hidden', !chips.childElementCount);
 }
 
 function hideSuggestions() {
@@ -1940,8 +2030,10 @@ function startChat() {
       ];
       msg = greetings[Math.floor(Math.random() * greetings.length)];
     }
+    msg = msg.replace(/[^.!?。！？\n]*[?？]/g, '').trim();
+    msg += '\n\n' + getStageConfig()[0].question;
     addBotMessage(msg);
-    showBubble(msg.split('\n')[0]);
+    showBubble(getStageConfig()[0].question);
   }, 600);
 }
 
@@ -1965,8 +2057,7 @@ function addBotMessage(text) {
   messages.scrollTop = messages.scrollHeight;
   // 봇 메시지 후: 아직 대화 미시작이면 시작카드, 진행 중이면 일반 칩
   setTimeout(() => {
-    if (currentStage === 0 && chatHistory.length === 0) showStarterCards();
-    else showSuggestions();
+    showSuggestions();
   }, 300);
 }
 
@@ -2030,8 +2121,11 @@ async function sendMessage() {
   chatHistory.push({ role: 'user', content: text });
 
   // ── 단계 진행 ──
+  hideSuggestions();
   hideStarterCards();
   if (currentStage === 0) { currentStage = 1; updateStageBar(); }
+  stageContext.answers = stageContext.answers || {};
+  stageContext.answers[currentStage] = text;
 
   // ── 위험어 감지 (특허 CAUTION 플래그) ──
   if (checkRisk(text)) {
@@ -2077,7 +2171,13 @@ async function sendMessage() {
         '자기성찰이 필요한 순간이군요 💙 혼자 걷기 좋은 숲길이나 조용한 공간을 연결해 드릴게요.',
         '관계에서 오는 피로감이죠 🌱 사람 밀도가 낮고 자연친화도가 높은 공간이 회복에 도움돼요.'
       ];
-      reply = demos[Math.floor(Math.random() * demos.length)];
+      const acknowledgments = ['지금 마음을 함께 살펴볼게요.', '그 색이 주는 느낌을 여행에 담아볼게요.', '함께할 분들을 고려해서 여행을 이어갈게요.', '여행에서 원하는 것을 기억해 둘게요.', '마음이 끌리는 공간을 추천에 반영할게요.', '돌아올 때 바라는 마음을 여행의 기준으로 삼을게요.'];
+      reply = acknowledgments[currentStage - 1] || '지금까지의 이야기를 바탕으로 여행을 정리할게요.';
+      if (currentStage >= getStageConfig().length) {
+        const best = selectBestPlace(getPlacesFromAdmin());
+        stageContext.recommendedPlace = best;
+        reply = best ? '지금 나눈 마음을 바탕으로 ' + best.name + '을 추천해요. 아래 장소 정보를 확인해 주세요.' : '원하는 여행 분위기를 함께 정리했어요. 현재 등록된 장소가 없어 구체적인 추천은 장소 정보가 준비되면 안내할게요.';
+      }
       recordDemoUsage();
     } else {
       // ── GPT API 호출 ──
@@ -2118,8 +2218,13 @@ async function sendMessage() {
     }
 
     removeTyping();
+    const nextQuestion = getStageConfig()[currentStage]?.question;
+    if (nextQuestion && !stageContext.finished) {
+      reply = reply.replace(/[^.!?。！？\n]*[?？]/g, '').trim();
+      reply += '\n\n' + nextQuestion;
+    }
     addBotMessage(reply);
-    showBubble(reply.length > 40 ? reply.slice(0, 38) + '…' : reply);
+    showBubble(nextQuestion || (reply.length > 40 ? reply.slice(0, 38) + '…' : reply));
     incrementDailyCount(); // 사용량 카운트 증가
     // 단계 진행 (응답 받을 때마다 다음 단계로)
     advanceStage();
@@ -2134,6 +2239,7 @@ async function sendMessage() {
 
   isTyping = false;
   document.getElementById('send-btn').disabled = false;
+  showSuggestions();
   document.getElementById('chat-input').focus();
 }
 
