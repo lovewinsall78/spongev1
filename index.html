@@ -1064,6 +1064,7 @@
 <input type="file" id="avatar-file-input" accept="image/*" hidden onchange="handleAvatarFile(this)" />
 <input type="file" id="avatar-camera-input" accept="image/*" capture="user" hidden onchange="handleAvatarFile(this)" />
 
+<script src="firebase-client.js"></script>
 <script>
 
 const INTRO_SWAY_KEY = 'sponge_intro_sway_deg';
@@ -1958,7 +1959,23 @@ function selectRandom() {
 // ══════════════════════════════
 // SCREEN 2 → 3
 // ══════════════════════════════
-function startChat() {
+let cloudStartPending = false;
+async function startChat() {
+  if (cloudStartPending) return;
+  if (window.SPONGE_CLOUD_ENABLED) {
+    cloudStartPending = true;
+    try {
+      await SpongeCloud.loadConfig();
+      applyAuroraSettings();
+      const greeting = localStorage.getItem('sponge_greeting_text');
+      window.customGreeting = greeting || '';
+    } catch (error) {
+      alert('대화 서버에 연결하지 못했습니다. ' + error.message);
+      cloudStartPending = false;
+      return;
+    }
+    cloudStartPending = false;
+  }
   startUsageSession();
   // 선택 안 됐으면 좋은 기분의 네 친구 중 랜덤 선택
   if (!selectedChar) selectRandom();
@@ -1975,7 +1992,7 @@ function startChat() {
   document.getElementById('char-name-badge').textContent = `${_currentEmotionChar.name} · ${_currentEmotionChar.emotion}`;
 
   // API 키 체크
-  if (API_KEY === 'YOUR_OPENAI_API_KEY') {
+  if (!window.SPONGE_CLOUD_ENABLED && API_KEY === 'YOUR_OPENAI_API_KEY') {
     document.getElementById('api-notice').style.display = 'block';
   }
 
@@ -2051,7 +2068,7 @@ function addBotMessage(text) {
   div.className = 'msg bot';
   div.innerHTML = `
     <div class="msg-avatar" style="background:none;overflow:visible;">${getBotAvatarHTML()}</div>
-    <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+    <div class="msg-bubble">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br>')}</div>
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
@@ -2161,7 +2178,7 @@ async function sendMessage() {
     // API 키 최신값 읽기
     const currentApiKey = localStorage.getItem('sponge_api_key') || 'YOUR_OPENAI_API_KEY';
 
-    if (currentApiKey === 'YOUR_OPENAI_API_KEY') {
+    if (!window.SPONGE_CLOUD_ENABLED && currentApiKey === 'YOUR_OPENAI_API_KEY') {
       // ── 데모 모드 (API 키 없을 때) ──
       await new Promise(r => setTimeout(r, 1200));
       const demos = [
@@ -2182,7 +2199,12 @@ async function sendMessage() {
     } else {
       // ── GPT API 호출 ──
       usageRequest = beginUsageRequest(localStorage.getItem('sponge_model') || 'gpt-3.5-turbo');
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      if (window.SPONGE_CLOUD_ENABLED) getStagePromptAddition();
+      const response = window.SPONGE_CLOUD_ENABLED ? await SpongeCloud.chat({
+        session:usageSessionId, requestId:usageRequest.id,
+        messages:chatHistory.slice(-30), stage:currentStage,
+        placeName:stageContext.recommendedPlace?.name || ''
+      }) : await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2279,7 +2301,11 @@ function getFullSystemPrompt() {
 // ══════════════════════════════
 // 초기 로딩
 // ══════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  if (window.SPONGE_CLOUD_ENABLED) {
+    try { await SpongeCloud.loadConfig(); introSwayDegrees = readIntroSway(); }
+    catch { /* startChat reports connection errors and never silently falls back to local API keys. */ }
+  }
   initMyAvatar();
   applyAuroraSettings();
   // 관리자 설정값 반영
